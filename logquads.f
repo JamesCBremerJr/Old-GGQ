@@ -9,14 +9,14 @@
 !       norder.
 !
         implicit double precision (a-h,o-z)
-        dimension                     :: xsgrid(100)
+        dimension                     :: ab0(2,100)
         double precision, allocatable :: disc(:),coefs(:,:)
         double precision, allocatable :: xs0(:),whts0(:),rints(:)
         double precision, allocatable :: xs(:),whts(:)
 
         external funuser,funeval
 c
-        eps    = 1.0d-30
+        eps    = epsilon(0.0d0)*100.0d0
         x0     = 0.1d0
         norder = 16
 c
@@ -35,12 +35,12 @@ c
 c
 c       specify an initial discretization grid
 c
-        ngrid     = 2
-        xsgrid(1) = a
-        xsgrid(2) = b
+        nints0    = 1
+        ab0(1,1)  = a
+        ab0(2,1)  = b
         kdisc     = 30
 c
-        call legedisc(ier,ngrid,xsgrid,kdisc,eps,nfuns,
+        call legedisc(ier,nints0,ab0,kdisc,eps,nfuns,
      -    funuser,par1,par2,par3,par4,disc,ldisc,ncoefs,lkeep)
 c
         if (ier .ne. 0) then

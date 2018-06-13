@@ -38,3 +38,8 @@ for evaluating integrals of the form
       -1
 
 with p and q polynomials of specified degrees.
+
+12.  The file logquads2d.f contains code for constructing quadrature rules
+for discretizing integral operators with logarithmically singular kernels
+on planar domains.
+

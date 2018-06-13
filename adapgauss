@@ -1,0 +1,43 @@
+#!/bin/sh
+
+export FC="gfortran -w -O3"
+#export FC="ifort -O3 -r16"
+export CC="gcc"
+export DSTRIP="./dstrip"
+
+# build the dstrip utility
+$CC -o dstrip dstrip.c
+
+FILE="adapgauss"
+
+
+DFILES="qrsolve               \
+        legendre              \
+        gspiv                 \
+        print                 \
+"
+
+
+LFILES=""
+
+for file in ${DFILES}
+do
+LFILES="${LFILES} ${file}.o"
+done
+
+# compile the code from which debugging headers are to be stripped.
+./FCOMP $DFILES
+
+
+# compile the main code 
+#echo compiling ${FILE}.f ...
+#${FC} -c ${FILE}.f
+
+# link 'em
+echo linking ...
+${FC} -o int2 ${FILE}.f ${LFILES} 
+rm -f ${FILE}.o
+
+read -p "hit enter to run ..."
+
+./int2

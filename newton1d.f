@@ -80,13 +80,12 @@ c
      1    nquad0,xs0,whts0,nquad,xs,whts,rints)
         implicit double precision (a-h,o-z)
         dimension xs0(1),whts0(1),xs(1),whts(1),rints(1)
-c
-        dimension vals0(1000),ders0(1000)
-!        dimension rnorms(100 000),ipivs(200 000),sol(10000)
         double precision, allocatable :: rnorms(:),sol(:)
         integer, allocatable :: ipivs(:)
 c
         double precision, allocatable :: vals(:,:),a(:,:),b(:,:)
+        double precision, allocatable :: vals0(:),ders0(:)
+
         external funeval
 c
 c       Construct a k-point quadrature for a collection of k orthonormal
@@ -138,6 +137,7 @@ c
         allocate ( vals(nquad0,nfuns), a(nfuns,nquad0) )
         allocate ( b(nfuns,nfuns) )
         allocate(rnorms(100000),ipivs(100000),sol(100000))
+        allocate(vals0(10000),ders0(10000))
 
 !        dimension rnorms(100 000),ipivs(200 000),sol(10000)
 c
@@ -219,118 +219,14 @@ c
         call prin2("in chebquad, xs=*",xs,nquad)
         call prin2("in chebquad, whts=*",whts,nquad)
         end
-c
-c
-c
-c$$$        subroutine chebquad2(nfuns,vals,nquad0,xs0,ys0,whts0,
-c$$$     1    nquad,xs,ys,whts,rints)
-c$$$        implicit double precision (a-h,o-z)
-c$$$        dimension xs0(1),ys0(1),whts0(1),xs(1),ys(1),whts(1),rints(1)
-c$$$        dimension vals(nquad0,nfuns)
-c$$$c
-c$$$        dimension vals0(1000),dersx0(1000),dersy0(1000)
-c$$$        dimension rnorms(100 000),ipivs(100 000),sol(100 000)
-c$$$c
-c$$$        double precision, allocatable :: a(:,:),b(:,:)
-c$$$c
-c$$$c       Construct a k-point quadrature for a collection of k orthonormal
-c$$$c       functions given an existing n-point quadrature integrating their
-c$$$c       products.
-c$$$c
-c$$$c       This procedure operates by producing a basic solution to the
-c$$$c       obvious linear system of equations.  Note the resulting 
-c$$$c       quadrature will have interior nodes but is not guaranteed to 
-c$$$c       have positive weights.
-c$$$c
-c$$$c                          Input Parameters:
-c$$$c
-c$$$c   nfuns - the number of input functions in the orthonormal collection
-c$$$c   vals - an (nquad0,nfuns) array containing the values of the functions
-c$$$c       at the quadrature nodes.
-c$$$c
-c$$$c   nquad0 - the number of points in the initial quadrature formula
-c$$$c   (xs0,ys0) - the coordinates of the nodes in the initial formula
-c$$$c   whts0 - the initial quadrature weights
-c$$$c
-c$$$c                         Output Parameters:
-c$$$c
-c$$$c   nquad - the number of points in the downsampled formula
-c$$$c   (xs,y) - the coordinates of the nodes of the downsampled formula
-c$$$c   whts - the quadrature weights for the downsampled formula
-c$$$c
-c$$$c   rints - upon return, this user-supplied array will contain the
-c$$$c       integrals of the input functions as computed using the 
-c$$$c       initial quadrature.
-c$$$c
-c$$$c       Allocate memory for the procedure.
-c$$$c
-c$$$        allocate ( a(nfuns,nquad0) )
-c$$$        allocate ( b(nfuns,nfuns) )
-c$$$c
-c$$$c       Compute the integrals of the functions.
-c$$$c
-c$$$        do 1200 j=1,nfuns
-c$$$        sum=0
-c$$$        do 1300 i=1,nquad0
-c$$$        wht=whts0(i)
-c$$$        sum=sum+vals(i,j)*wht
-c$$$ 1300 continue
-c$$$        rints(j)=sum
-c$$$        sol(j)=sum
-c$$$ 1200 continue
-c$$$c
-c$$$        call prin2("in chebquad, rints = *",rints,nfuns)
-c$$$c
-c$$$c       Use GS to pick quadrature nodes.
-c$$$c
-c$$$        do 2000 i=1,nquad0
-c$$$        wht=whts0(i)
-c$$$        do 2100 j=1,nfuns
-c$$$        a(j,i)=vals(i,j)*sqrt(wht)
-c$$$ 2100 continue
-c$$$ 2000 continue
-c$$$c
-c$$$        call gspiv2(a,nfuns,nquad0,rnorms,ipivs)
-c$$$        call prin2("rnorms=*",rnorms,nfuns)
-c$$$        call prinf("ipivs=*",ipivs,nfuns)
-c$$$c
-c$$$c       Solve a linear system in order to construct weights.
-c$$$c
-c$$$        do 3000 j=1,nfuns
-c$$$        do 3100 i=1,nfuns
-c$$$        ii=ipivs(i)
-c$$$        b(j,i)=vals(ii,j)*sqrt(whts0(ii))
-c$$$ 3100 continue
-c$$$ 3000 continue
-c$$$c
-c$$$        call qrsolv(b,nfuns,sol,rcond)
-c$$$c       
-c$$$c       Compute the quadrature.
-c$$$c
-c$$$        nquad = nfuns
-c$$$        do 4000 j=1,nquad
-c$$$        jj=ipivs(j)
-c$$$        xs(j) = xs0(jj)
-c$$$        ys(j) = ys0(jj)
-c$$$        whts(j) = sol(j)*sqrt(whts0(jj))
-c$$$ 4000 continue
-c$$$c
-c$$$        call prinf("in chebquad, nquad=*",nquad,1)
-c$$$        call prin2("in chebquad, xs=*",xs,nquad)
-c$$$        call prin2("in chebquad, ys=*",ys,nquad)
-c$$$        call prin2("in chebquad, whts=*",whts,nquad)
-c$$$c
-c$$$        end
-c
-c
-c
+
+
+
         subroutine gaussquad(eps,nfuns,rints,funeval,par1,par2,par3,
      1    par4,nquad,xs,whts,a,b,ngoal,ifaccept)
         implicit double precision (a-h,o-z)
         dimension xs(1),whts(1),rints(1)
         double precision, allocatable :: vals0(:),ders(:),signifs(:)
-!        dimension vals0(100 000),ders(100 000)
-!        dimension signifs(1 000 000)
         external funeval
 c
 c       Reduce an existing quadrature formula for a collection of 
@@ -429,11 +325,8 @@ c
      1    par3,par4,nquad,xs,whts,a,b,ifaccept,v,ifinit)
         implicit double precision (a-h,o-z)
         dimension xs(1),whts(1),rints(1),z0(2*nquad)
-c
         double precision, allocatable :: vals0(:),ders0(:),sums(:)
         dimension v(1)
-!        dimension vals0(10000),ders0(10000),sums(100000),v(1)
-c
         external funeval
 c
 c       Reduce an existing quadrature formula for a collection of 
@@ -540,8 +433,6 @@ c
      1    nquad,xs,whts,signifs,aa,bb,rints)
         implicit double precision (a-h,o-z)
         dimension xs(1),ys(1),whts(1),signifs(1),rints(1)
-!        dimension vals0(10 000),ders0(10 000)
-!        dimension w2(10 000)
 c
         double precision, allocatable :: df(:,:), a(:,:),w(:),w2(:)
         double precision, allocatable :: ainv(:,:),ainv2(:,:)
@@ -734,7 +625,6 @@ c
 c
         subroutine gauss_smw0(ainv,n,u,v,x,y,ifsign,ifsing)
         implicit double precision (a-h,o-z)
-c
         double precision ainv(n,n),u(n),v(n),x(n),y(n)
 c
         call gauss_apply(n,n,ainv,u,x)
@@ -855,7 +745,6 @@ c
         dimension z0(nquad*3),rints(1),v(1)
 c
         double precision, allocatable :: vals0(:),ders0(:),rnorms(:)
-!        dimension vals0(1000),ders0(1000),rnorms(10 000)
 c
         double precision, allocatable :: df(:,:),rhs(:),z1(:)
         double precision, allocatable :: w(:)
@@ -976,8 +865,6 @@ c
         dimension z0(nquad*2),rints(1)
 c
         double precision, allocatable :: vals0(:),ders0(:),rnorms(:)
-!        dimension vals0(100000),ders0(100000),rnorms(1000 000)
-c
         double precision, allocatable :: df(:,:),rhs(:),z1(:)
         double precision, allocatable :: w(:),u(:,:),t(:,:),v(:,:)
 c
