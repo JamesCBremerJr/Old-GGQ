@@ -1,5 +1,4 @@
 c
-c
 c       Construct tensor product quadrature rules for discretizing integral 
 c       operators given on planar domains and which have kernels of the form
 c
@@ -10,6 +9,7 @@ c
 c            \nabla_x log (|x-y|) \cdot F(y) + \phi(y)
 c
 c       with \phi a smooth function and F a smooth vector field.
+c
 c
         implicit double precision (a-h,o-z)
         double precision, allocatable :: xsdisc(:),ysdisc(:),whtsdisc(:)
@@ -23,8 +23,8 @@ c
 c
         integer, allocatable          :: nquadall(:)
 
-        eps   = 1.0d-16
-        npoly = 4
+        eps   = 1.0d-15
+        npoly = 12
 c
         nlege = npoly+1
         allocate(xslege(nlege),whtslege(nlege))
@@ -140,6 +140,11 @@ c
 c
 c       Build the first set of singular quadrature rules
 c
+ 1100 format("nquadsall(",I3.3,")    = ",I3.3)
+ 1200 format("xsall(",I3.3,",",I3.3,")   = ",D44.36)
+ 1300 format("ysall(",I3.3,",",I3.3,")   = ",D44.36)
+ 1400 format("whtsall(",I3.3,",",I3.3,") = ",D44.36)
+
         nn = ndisc+nquadbdy
 
         allocate(xsall(300,nn),ysall(300,nn),whtsall(300,nn))
@@ -188,10 +193,6 @@ c
         write(iw,0100) "double precision :: whtsall(300,:)"
         write(iw,0100) "integer          :: nquadsall(:)"
 c
- 1100 format("nquadsall(",I3.3,")    = ",I3.3)
- 1200 format("xsall(",I3.3,",",I3.3,")   = ",D44.36)
- 1300 format("ysall(",I3.3,",",I3.3,")   = ",D44.36)
- 1400 format("whtsall(",I3.3,",",I3.3,") = ",D44.36)
 
         do i=1,ndisc+nquadbdy
         nq = nquadall(i)
@@ -211,10 +212,6 @@ c
         call flush(iw)
 c
 c       Construct the second set of singular rules
-c
-
-c
-c       Write the second set of singular rules to the disk
 c
         nn = ndisc+nquadbdy
 c
@@ -1374,9 +1371,3 @@ c
         whts0(i) = whts(i)
         end do
         end
-
-
-
-
-
-
