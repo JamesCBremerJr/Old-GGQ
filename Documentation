@@ -14,7 +14,6 @@ linear equations.
 
 5.  The file gspiv.f contains code for conducting Gram-Schmidt orthogonalization
 
-
 6.  The file legendre.f contains code for constructing Gauss-Legendre
 quadratures and for manipulating Legendre expansions.
 
@@ -27,19 +26,25 @@ Legendre expansions.
 9.  The file newtls.f contains code for solving least squares problems.
 
 10.  The file newton1d.f contains a one-dimensional ``generalized Gaussian''
-quadrature code and the file newton2d.f contains the two-dimensional version
-of the same.  Both codes rely on the utility routines in newtls.f.
+quadrature code.
 
-11.  The file logquads.f contains code for constructing quadrature rules
-for evaluating integrals of the form 
+
+11.  The file logquads.f contains code for constructing a set of quadrature
+rules for evaluating integrals of the form 
 
        1
-    int   ( log|x-y| p(y) + q(y) ) dy
+    int   ( log|x-y| p(y) + q(y) ) dy                                     (1)
       -1
 
-with p and q polynomials of specified degrees.
+with p and q polynomials of specified degrees and for evaluating (1) when x
+is close to, but not contained in, the interval [-1,1].  These are useful in
+discretizing integral operators given on planar curves.
 
-12.  The file logquads2d.f contains code for constructing quadrature rules
+12.  The file gausssq.f contains a code for constructing quadrature rules
+which integrate polynomials of a specified degree over the rectangle
+[-1,1] x [-1,1]
+
+13.  The file logquads2d.f contains code for constructing quadrature rules
 for discretizing integral operators with logarithmically singular kernels
 on planar domains.
 

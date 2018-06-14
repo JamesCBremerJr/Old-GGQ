@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export FC="gfortran -Ofast -w -fdefault-real-8"
+export FC="gfortran -fopenmp -march=native -Ofast -w -freal-8-real-10"
 export CC="gcc"
 export DSTRIP="./dstrip"
 
@@ -9,7 +9,8 @@ $CC -o dstrip dstrip.c
 
 FILE="logquads"
 
-DFILES="legedisc              \
+DFILES="adapgauss             \
+        legedisc              \
         orthom                \
         newton1d              \
         newtls                \

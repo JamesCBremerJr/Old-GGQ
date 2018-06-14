@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export FC="gfortran -fopenmp -march=native -Ofast -w -fdefault-real-8"
+export FC="gfortran -fopenmp -march=native -Ofast -w -freal-8-real-10"
 export CC="gcc"
 export DSTRIP="./dstrip"
 

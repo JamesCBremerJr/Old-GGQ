@@ -23,7 +23,7 @@ c
 c
         integer, allocatable          :: nquadall(:)
 
-        eps   = 1.0d-15
+        eps   = 1.0d-13
         npoly = 12
 c
         nlege = npoly+1
@@ -942,9 +942,6 @@ c
         call prina("=========================*")
         call prina("*")
 c
-        stop
-c
-
         end
 
 
