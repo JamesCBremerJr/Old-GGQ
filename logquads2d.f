@@ -23,8 +23,8 @@ c
 c
         integer, allocatable          :: nquadall(:)
 
-        eps   = 1.0d-30
-        npoly = 8
+        eps   = 1.0d-16
+        npoly = 4
 c
         nlege = npoly+1
         allocate(xslege(nlege),whtslege(nlege))
@@ -217,9 +217,6 @@ c
 c       Write the second set of singular rules to the disk
 c
         nn = ndisc+nquadbdy
-
-        allocate(xsall(300,nn),ysall(300,nn),whtsall(300,nn))
-        allocate(nquadall(nn))
 c
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad)
         allocate(xs(10000),ys(10000),whts(10000))
