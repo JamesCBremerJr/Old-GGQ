@@ -24,7 +24,7 @@ c
         integer, allocatable          :: nquadall(:)
 
         eps   = 1.0d-13
-        npoly = 12
+        npoly = 8
 c
         nlege = npoly+1
         allocate(xslege(nlege),whtslege(nlege))

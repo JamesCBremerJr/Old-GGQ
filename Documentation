@@ -28,9 +28,8 @@ Legendre expansions.
 10.  The file newton1d.f contains a one-dimensional ``generalized Gaussian''
 quadrature code.
 
-
 11.  The file logquads.f contains code for constructing a set of quadrature
-rules for evaluating integrals of the form 
+rules for evaluating integrals of the form
 
        1
     int   ( log|x-y| p(y) + q(y) ) dy                                     (1)

@@ -6,7 +6,7 @@
         double precision, allocatable :: xsnear(:),whtsnear(:)
 c
         eps   = 1.0d-16
-        npoly = 20
+        npoly = 30
 c
         call legequad(npoly,xslege,whtslege)
         call prin2("xslege = *",xslege,npoly)
@@ -37,9 +37,14 @@ c
 c       Write the quadrature out to the disk
 c
  1000 format (A)
- 1100 format ("xs(",I2.2,")   = ",D44.26)
- 1200 format ("whts(",I2.2,") = ",D44.26)
- 1300 format ("nquad          = ",I3.3)
+ 1100 format ("xs(",I2.2,")   = ",D44.36)
+ 1200 format ("whts(",I2.2,") = ",D44.36)
+ 1300 format ("nquad    = ",I3.3)
+c
+ 1400 format ("nquadsall(",I2.2,")    = ",I3.3)
+ 1500 format ("xsall(",I2.2,",",I2.2,")     = ",D44.36)
+ 1600 format ("whtsall(",I2.2,",",I2.2,")   = ",D44.36)
+
         
         iw = 1001
         open(iw,FILE='quads1d.f90')
@@ -56,6 +61,23 @@ c
         write(iw,1000) "end subroutine"
         write(iw,*)    ""
         write(iw,*)    ""
+
+        write(iw,1000) "subroutine singquad(nquadsall,xsall,whtsall)"
+        write(iw,1000) "implicit double precision (a-h,o-z)"
+        write(iw,1000) "dimension xsall(200,1),whtsall(200,1)"
+        write(iw,1000) "dimension nquadsall(1)"
+
+        do i=1,npoly
+        write (iw,1400) i,nquadall(i)
+
+        do j=1,nquadall(i)
+        write (iw,1500) j,i,xsall(j,i)
+        write (iw,1600) j,i,whtsall(j,i)
+        end do
+
+        end do
+c
+        write(iw,1000) "end subroutine"
 
         close(iw)
 
@@ -229,31 +251,28 @@ c
 c
 c       Set the zs
 c
-        nints   = 6
-        k       = 20
+        nints   = 5
+        k       = 24
         call legequad(k,xslege,whtslege)
         nzs     = 0
 
-c$$$        ab(1,1) = 1.0d0
-c$$$        ab(2,1) = 1.0d0 + 1.0d-7
-c$$$
-        ab(1,1) = 1.0d0 + 1.0d-7
-        ab(2,1) = 1.0d0 + 1.0d-5
+c$$$        ab(1,1) = 1.0d0 + 1.0d-7
+c$$$        ab(2,1) = 1.0d0 + 1.0d-5
 
-        ab(1,2) = 1.0d0 + 1.0d-5
-        ab(2,2) = 1.0d0 + 1.0d-3
+        ab(1,1) = 1.0d0 + 1.0d-5
+        ab(2,1) = 1.0d0 + 1.0d-3
 c
-        ab(1,3) = 1.0d0 + 1.0d-3
-        ab(2,3) = 1.0d0 + 1.0d-1
+        ab(1,2) = 1.0d0 + 1.0d-3
+        ab(2,2) = 1.0d0 + 1.0d-1
 c
-        ab(1,4) = 1.0d0 + 1.0d-1
-        ab(2,4) = 1.5d0 
+        ab(1,3) = 1.0d0 + 1.0d-1
+        ab(2,3) = 1.5d0 
+
+        ab(1,4) = 1.5d0
+        ab(2,4) = 2.0d0 
 
         ab(1,5) = 1.5d0
         ab(2,5) = 2.0d0 
-
-        ab(1,6) = 1.5d0
-        ab(2,6) = 2.0d0 
 
         do int=1,nints
         a = ab(1,int)
@@ -323,33 +342,42 @@ c
         a = -1.0d0
         b =  1.0d0
 
-c$$$        allocate(errs())
-c$$$
-c$$$        idx = 0
-c$$$        do i=0,npoly
-c$$$        do j=0,npoly
-c$$$c
-c$$$        m = 30
-c$$$        call adapgauss(ier,a,b,eps,m,val0,funquad,i,j,x0,
-c$$$     1      par4,par5,par6,par7,par8)
-c$$$
-c$$$        val = 0
-c$$$
-c$$$        do k=1,nquad
-c$$$        x   = xs(k)
-c$$$        wht = whts(k)
-c$$$        call funquad(x,val00,i,j,x0,par4,par5,par6,par7,par8)
-c$$$        val = val + val00*wht
-c$$$        end do
-c$$$c
-c$$$        idx = idx+1
-c$$$        errs(idx) = abs(val-val0)
-c$$$
-c$$$        end do
-c$$$        end do
-c$$$c
-c$$$
-c$$$        call prin2("errs = *",errs,(npoly+1)*(npoly+1))
+        nn = nzs
+        allocate(errs(nn))
+
+        idx = 0
+        do l=1,nzs
+        x0 = zs(l)
+        errmax = 0.0d0
+        do i=0,npoly
+        do j=0,npoly
+c
+          
+        m = 30
+        call adapgauss(ier,a,b,eps,m,val0,funquad2,i,j,x0,
+     1      par4,par5,par6,par7,par8)
+
+        val = 0
+
+        do k=1,nquad
+        x   = xs(k)
+        wht = whts(k)
+        call funquad2(x,val00,i,j,x0,par4,par5,par6,par7,par8)
+        val = val + val00*wht
+        end do
+c
+        errmax = max(errmax,abs(val-val0))
+
+        end do
+        end do
+
+        idx = idx+1
+        errs(idx) = abs(val-val0)
+
+        end do
+c
+
+        call prin2("errs = *",errs,nn)
 
         end subroutine
 
