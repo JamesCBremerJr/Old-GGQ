@@ -23,7 +23,7 @@ c
 c
         integer, allocatable          :: nquadall(:)
 
-        eps   = 1.0d-13
+        eps   = 1.0d-15
         npoly = 8
 c
         nlege = npoly+1
@@ -592,6 +592,13 @@ c
         call prina("=========================*")
         call prina("*")
 c
+        errmax = maxval(errs)
+        if (errmax .gt. 1.0d-14) then
+           print *,"!!!!!! diagquad  ERROR TOO HIGH"
+           print *,x1,x2,npoly
+           stop           
+        endif
+        
         end
 
 
@@ -942,6 +949,13 @@ c
         call prina("=========================*")
         call prina("*")
 c
+        errmax = maxval(errs)
+        if (errmax .gt. 1.0d-14) then
+           print *,"!!!!! diagquad2  ERROR TOO HIGH"
+           print *,x1,x2,npoly
+           stop           
+        endif
+
         end
 
 
