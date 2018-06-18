@@ -17,8 +17,8 @@ c
         epsadap = 1.0d-24
 c
         ndegree = 8            ! degree of the discretization polynomials
-        npoly   = 12           ! degree of polynomials to integrate
-        nmax    = 500          ! maximum possible singular quadrature size
+        npoly   = 8            ! degree of polynomials to integrate
+        nmax    = 1000         ! maximum possible singular quadrature size
 c
 c       Fetch the discretization quadrature rule for the interior
 c
@@ -67,66 +67,69 @@ c
 c
         close(iw)
         call flush(iw)
+c
+        allocate(xsall(nmax,ndisc),ysall(nmax,ndisc))
+        allocate(whtsall(nmax,ndisc))
+        allocate(nquadall(ndisc))
 
-c
-c       Build the first set of singular quadrature rules (for log 
-c       singularities)
-c
  1100 format("nquadsall(",I3.3,")    = ",I3.3)
  1200 format("xsall(",I3.3,",",I3.3,")   = ",D44.36)
  1300 format("ysall(",I3.3,",",I3.3,")   = ",D44.36)
  1400 format("whtsall(",I3.3,",",I3.3,") = ",D44.36)
-c     
-        allocate(xsall(nmax,ndisc),ysall(nmax,ndisc))
-        allocate(whtsall(nmax,ndisc))
-        allocate(nquadall(ndisc))
+ 2100 format(A," = ",I3.3)
 c
-!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad)
-        allocate(xs(10000),ys(10000),whts(10000))
-!$OMP   DO
-        do i=1,ndisc
-        x1    = xsdisc(i)
-        x2    = ysdisc(i)
-        call diagquad(ier,eps,epsadap,npoly,x1,x2,nquad,xs,ys,whts)
-        xsall(1:nquad,i)   = xs(1:nquad)
-        ysall(1:nquad,i)   = ys(1:nquad)
-        whtsall(1:nquad,i) = whts(1:nquad)
-        nquadall(i)        = nquad
-        end do
-!$OMP   END DO
-!$OMP   END PARALLEL
-
 c
-c       Write the first set of singular rules to the disc
+c       Build the first set of singular quadrature rules (for log 
+c       singularities)
 c
-        iw = 1001
-        open(iw,FILE='quads.f90',STATUS='OLD',ACCESS='append')
-
-        write(iw,0100) "subroutine singquads(nquadsall,xsall," //
-     -    "ysall,whtsall)"
-        write(iw,0100) "implicit double precision (a-h,o-z)"
-        write(iw,0150) "xsall",nmax,ndisc
-        write(iw,0150) "ysall",nmax,ndisc
-        write(iw,0150) "whtsall",nmax,ndisc
-        write(iw,0175) "nquadsall",ndisc
-c
-
-        do i=1,ndisc
-        nq = nquadall(i)
-        write(iw,1100) i,nq
-        do j=1,nq
-        write(iw,1200) nq,i,xsall(j,i)
-        write(iw,1300) nq,i,ysall(j,i)
-        write(iw,1400) nq,i,whtsall(j,i)
-        end do
-        end do
-c
-        write(iw,0100) "end subroutine"
-        write(iw,*)    ""
-        write(iw,*)    ""
-
-        close(iw)
-        call flush(iw)
+     
+c$$$c
+c$$$!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad)
+c$$$        allocate(xs(10000),ys(10000),whts(10000))
+c$$$!$OMP   DO
+c$$$        do i=1,ndisc
+c$$$        x1    = xsdisc(i)
+c$$$        x2    = ysdisc(i)
+c$$$        call diagquad(ier,eps,epsadap,npoly,x1,x2,nquad,xs,ys,whts)
+c$$$        xsall(1:nquad,i)   = xs(1:nquad)
+c$$$        ysall(1:nquad,i)   = ys(1:nquad)
+c$$$        whtsall(1:nquad,i) = whts(1:nquad)
+c$$$        nquadall(i)        = nquad
+c$$$        end do
+c$$$!$OMP   END DO
+c$$$!$OMP   END PARALLEL
+c$$$
+c$$$c
+c$$$c       Write the first set of singular rules to the disc
+c$$$c
+c$$$        iw = 1001
+c$$$        open(iw,FILE='quads.f90',STATUS='OLD',ACCESS='append')
+c$$$
+c$$$        write(iw,0100) "subroutine singquads(nquadsall,xsall," //
+c$$$     -    "ysall,whtsall)"
+c$$$        write(iw,0100) "implicit double precision (a-h,o-z)"
+c$$$        write(iw,0150) "xsall",nmax,ndisc
+c$$$        write(iw,0150) "ysall",nmax,ndisc
+c$$$        write(iw,0150) "whtsall",nmax,ndisc
+c$$$        write(iw,0175) "nquadsall",ndisc
+c$$$c
+c$$$
+c$$$        do i=1,ndisc
+c$$$        nq = nquadall(i)
+c$$$        write(iw,1100) i,nq
+c$$$        do j=1,nq
+c$$$        write(iw,1200) nq,i,xsall(j,i)
+c$$$        write(iw,1300) nq,i,ysall(j,i)
+c$$$        write(iw,1400) nq,i,whtsall(j,i)
+c$$$        end do
+c$$$        end do
+c$$$c
+c$$$        write(iw,0100) "end subroutine"
+c$$$        write(iw,*)    ""
+c$$$        write(iw,*)    ""
+c$$$
+c$$$        close(iw)
+c$$$        call flush(iw)
 c
 c        Construct the second set of singular rules
 c
@@ -178,7 +181,6 @@ c
         close(iw)
         call flush(iw)
 c
- 2100 format(A," = ",I3.3)
 c
         iw = 1001
         open(iw,FILE='quads.f90',STATUS='OLD',ACCESS='append')
@@ -403,7 +405,6 @@ c
         end do
 c
         call prina("*")
-        call prina("=========================*")
         call prinf("final nquad = *",nquad,1)
         call prin2("final xs    = *",xs,nquad)
         call prin2("final ys    = *",ys,nquad)
@@ -498,10 +499,17 @@ c
         end do
         end do
 c
+        call prina("---------------------------------------*")
         call prin2("errs = *",errs,idx)
-        call prina("=========================*")
+        call prina("--------------------------------------*")
         call prina("*")
 c
+        errmax = maxval(errs)
+        if (errmax .gt. 1.0d-16) then
+        call prina("MAXIMUM ERROR EXCEEDED*")
+        stop
+        endif
+
         end
 
 
@@ -929,8 +937,13 @@ c
         call prina("-----------------------------------------*")
         call prin2("errs = *",errs,idx)
         call prina("-----------------------------------------*")
-
         call prina("*")
+c
+        errmax = maxval(errs)
+        if (errmax .gt. 1.0d-16) then
+        call prina("MAXIMUM ERROR EXCEEDED*")
+        stop
+        endif
         
 c
         end
