@@ -37,4 +37,3 @@ have logarithmic singularities and which are given on planar curves.
 12.  The file logquads2d.f contains code for constructing a set
 of quadrature rules for discretizing integral operators whose kernels
 have logarithmic singularities and which are given on planar domains.
-

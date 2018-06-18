@@ -14,10 +14,11 @@ c
         integer, allocatable          :: nquadall(:)
 
         eps     = 1.0d-20
-        epsadap = 1.0d-20
-        npoly   = 8
+        epsadap = 1.0d-24
 c
-        nmax    = 300          !maximum possible singular quadrature size
+        ndegree = 8            ! degree of the discretization polynomials
+        npoly   = 12           ! degree of polynomials to integrate
+        nmax    = 500          ! maximum possible singular quadrature size
 c
 c       Fetch the discretization quadrature rule for the interior
 c
@@ -33,7 +34,7 @@ c       Write out the discretization quadrature rule
 c
         iw = 1001
         open(iw,FILE='quads.f90')
-
+c
  0100 format(A)
  0150 format("double precision :: ",A,"(",I3.3,",",I3.3,")")
  0175 format("integer          :: ",A,"(",I3.3,")")
@@ -182,11 +183,12 @@ c
         iw = 1001
         open(iw,FILE='quads.f90',STATUS='OLD',ACCESS='append')
 
-        write(iw,0100) "subroutine discquad_info(nquad,npoly,nmax)"
-        
+        write(iw,0100) "subroutine discquad_info(ndegree," //
+     -    "nquad,naux,nmax)"
         write(iw,0100) "implicit double precision (a-h,o-z)"
+        write(iw,2100) "ndegree",ndegree
         write(iw,2100) "nquad",ndisc
-        write(iw,2100) "npoly",npoly
+        write(iw,2100) "naux",npoly
         write(iw,2100) "nmax",nmax
         write(iw,0100) "end subroutine"
         write(iw,*)    ""
@@ -764,18 +766,8 @@ c
         call prin2("in diagquad2, final ys    = *",ys,nquad)
         call prin2("in diagquad2, final whts  = *",whts,nquad)
 c
-c$$$        sum1 = 0
-c$$$        do i=1,nquad
-c$$$           x    = xs(i)
-c$$$           y    = ys(i)
-c$$$           wht  = whts(i)
-c$$$           val  = (y-x2)/((x-x1)**2+(y-x2)**2)
-c$$$           sum1 = sum1 + val*wht
-c$$$        end do
-c$$$        print *,sum1
-c
-c       Test the newly constructed quadrature rule thoroughly via comparison
-c       with results obtained via adaptive quadrature
+c       Test the newly minted quadrature rule thoroughly via comparison
+c       with results obtained with adaptive quadrature
 c
         nn = (npoly+1)*(npoly+2)/2*3
 
