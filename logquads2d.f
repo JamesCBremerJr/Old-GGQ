@@ -4,33 +4,22 @@ c       operators given on planar domains and which have kernels of the form
 c
 c             log(|x-y|) \psi(y) + \phi(y)
 c
-c       with \psi and \phi smooth OR 
-c
-c            \nabla_x log (|x-y|) \cdot F(y) + \phi(y)
-c
-c       with \phi a smooth function and F a smooth vector field.
-c
+c       with \psi and \phi smooth AND the gradients of such kernels.
 c
         implicit double precision (a-h,o-z)
         double precision, allocatable :: xsdisc(:),ysdisc(:),whtsdisc(:)
-        double precision, allocatable :: xsbdy(:),ysbdy(:),whtsbdy(:)
-
         double precision, allocatable :: xsall(:,:),ysall(:,:)
         double precision, allocatable :: whtsall(:,:)
-
-        double precision, allocatable :: xslege(:),whtslege(:)
         double precision, allocatable :: xs(:),ys(:),whts(:)
-c
         integer, allocatable          :: nquadall(:)
 
-        eps   = 1.0d-15
-        npoly = 8
+        eps     = 1.0d-20
+        epsadap = 1.0d-20
+        npoly   = 8
 c
-        nlege = npoly+1
-        allocate(xslege(nlege),whtslege(nlege))
-        call legequad(nlege,xslege,whtslege)
+        nmax    = 300          !maximum possible singular quadrature size
 c
-c       Fetch the discretization quadrature for the interior
+c       Fetch the discretization quadrature rule for the interior
 c
         call discquad_info(ndisc)
         allocate(xsdisc(ndisc),ysdisc(ndisc),whtsdisc(ndisc))
@@ -40,53 +29,15 @@ c
         call prin2("ysdisc   = *",ysdisc,ndisc)
         call prin2("whtsdisc = *",whtsdisc,ndisc)
 c
-c       Put together the boundary quadrature
-c
-        nquadbdy = nlege*4
-        allocate(xsbdy(nquadbdy),ysbdy(nquadbdy),whtsbdy(nquadbdy))
-
-        idx = 0
-
-        do i=1,nlege
-        idx          = idx + 1
-        xsbdy(idx)   = -1.0d0
-        ysbdy(idx)   = xslege(i)
-        whtsbdy(idx) = whtslege(i)
-        end do
-
-        do i=1,nlege
-        idx          = idx + 1
-        xsbdy(idx)   = xslege(i)
-        ysbdy(idx)   = 1
-        whtsbdy(idx) = whtslege(i)
-        end do
-
-        do i=1,nlege
-        idx = idx + 1
-        xsbdy(idx)   = 1
-        ysbdy(idx)   = xslege(i)
-        whtsbdy(idx) = whtslege(i)
-        end do
-
-        do i=1,nlege
-        idx = idx + 1
-        xsbdy(idx)   = xslege(i)
-        ysbdy(idx)   = -1
-        whtsbdy(idx) = whtslege(i)
-        end do
-c
-        call prinf("nquadbdy = *",nquadbdy,1)
-        call prin2("xsbdy    = *",xsbdy,nquadbdy)
-        call prin2("ysbdy    = *",ysbdy,nquadbdy)
-        call prin2("whtsbdy  = *",whtsbdy,nquadbdy)
-c
-c       Write out the discretization quadrature rule and the boundary
-c       quadrature rule.
+c       Write out the discretization quadrature rule 
 c
         iw = 1001
         open(iw,FILE='quads.f90')
 
  0100 format(A)
+ 0150 format("double precision :: ",A,"(",I3.3,",",I3.3,")")
+ 0175 format("integer          :: ",A,"(",I3.3,")")
+
  0300 format(A,I3.3)
  0400 format("xs(",I3.3,")   = ",D44.36)
  0500 format("ys(",I3.3,")   = ",D44.36)
@@ -113,42 +64,21 @@ c
         write(iw,*)    ""
         write(iw,*)    ""
 c
-        write(iw,0100) "subroutine bdyquad(nquad,xs,ys,whts)"
-        write(iw,0100) "implicit double precision (a-h,o-z)"
-        write(iw,0100) "double precision :: xs(:),ys(:),whts(:)"
-        write(iw,0300) "nquad     = ",nquadbdy
-
-        do i=1,nquadbdy
-        write(iw,0400) i,xsbdy(i)
-        end do
-c
-        do i=1,nquadbdy
-        write(iw,0500) i,ysbdy(i)
-        end do
-c
-        do i=1,nquadbdy
-        write(iw,0600) i,whtsbdy(i)
-        end do
-c
-        write(iw,0100) "end subroutine"
-        write(iw,*)    ""
-        write(iw,*)    ""
-
+        close(iw)
         call flush(iw)
 
-        close(iw)
 c
-c       Build the first set of singular quadrature rules
+c       Build the first set of singular quadrature rules (for log 
+c       singularities)
 c
  1100 format("nquadsall(",I3.3,")    = ",I3.3)
  1200 format("xsall(",I3.3,",",I3.3,")   = ",D44.36)
  1300 format("ysall(",I3.3,",",I3.3,")   = ",D44.36)
  1400 format("whtsall(",I3.3,",",I3.3,") = ",D44.36)
-
-        nn = ndisc+nquadbdy
-
-        allocate(xsall(300,nn),ysall(300,nn),whtsall(300,nn))
-        allocate(nquadall(nn))
+c     
+        allocate(xsall(nmax,ndisc),ysall(nmax,ndisc))
+        allocate(whtsall(nmax,ndisc))
+        allocate(nquadall(ndisc))
 c
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad)
         allocate(xs(10000),ys(10000),whts(10000))
@@ -156,7 +86,7 @@ c
         do i=1,ndisc
         x1    = xsdisc(i)
         x2    = ysdisc(i)
-        call diagquad(ier,eps,npoly,x1,x2,nquad,xs,ys,whts)
+        call diagquad(ier,eps,epsadap,npoly,x1,x2,nquad,xs,ys,whts)
         xsall(1:nquad,i)   = xs(1:nquad)
         ysall(1:nquad,i)   = ys(1:nquad)
         whtsall(1:nquad,i) = whts(1:nquad)
@@ -164,21 +94,7 @@ c
         end do
 !$OMP   END DO
 !$OMP   END PARALLEL
-c
-!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad)
-        allocate(xs(10000),ys(10000),whts(10000))
-!$OMP   DO
-        do i=1,nquadbdy
-        x1    = xsbdy(i)
-        x2    = ysbdy(i)
-        call diagquad(ier,eps,npoly,x1,x2,nquad,xs,ys,whts)
-        xsall(1:nquad,i+ndisc)   = xs(1:nquad)
-        ysall(1:nquad,i+ndisc)   = ys(1:nquad)
-        whtsall(1:nquad,i+ndisc) = whts(1:nquad)
-        nquadall(i+ndisc)        = nquad
-        end do
-!$OMP   END DO
-!$OMP   END PARALLEL
+
 c
 c       Write the first set of singular rules to the disc
 c
@@ -188,13 +104,13 @@ c
         write(iw,0100) "subroutine singquads(nquadsall,xsall," //
      -    "ysall,whtsall)"
         write(iw,0100) "implicit double precision (a-h,o-z)"
-        write(iw,0100) "double precision :: xsall(300,:)"
-        write(iw,0100) "double precision :: ysall(300,:)"
-        write(iw,0100) "double precision :: whtsall(300,:)"
-        write(iw,0100) "integer          :: nquadsall(:)"
+        write(iw,0150) "xsall",nmax,ndisc
+        write(iw,0150) "ysall",nmax,ndisc
+        write(iw,0150) "whtsall",nmax,ndisc
+        write(iw,0175) "nquadsall",ndisc
 c
 
-        do i=1,ndisc+nquadbdy
+        do i=1,ndisc
         nq = nquadall(i)
         write(iw,1100) i,nq
         do j=1,nq
@@ -211,9 +127,9 @@ c
         close(iw)
         call flush(iw)
 c
-c       Construct the second set of singular rules
+c        Construct the second set of singular rules
 c
-        nn = ndisc+nquadbdy
+        nn = ndisc
 c
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad)
         allocate(xs(10000),ys(10000),whts(10000))
@@ -221,26 +137,11 @@ c
         do i=1,ndisc
         x1    = xsdisc(i)
         x2    = ysdisc(i)
-        call diagquad2(ier,eps,npoly,x1,x2,nquad,xs,ys,whts)
+        call diagquad2(ier,eps,epsadap,npoly,x1,x2,nquad,xs,ys,whts)
         xsall(1:nquad,i)   = xs(1:nquad)
         ysall(1:nquad,i)   = ys(1:nquad)
         whtsall(1:nquad,i) = whts(1:nquad)
         nquadall(i)        = nquad
-        end do
-!$OMP   END DO
-!$OMP   END PARALLEL
-c
-!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad)
-        allocate(xs(10000),ys(10000),whts(10000))
-!$OMP   DO
-        do i=1,nquadbdy
-        x1    = xsbdy(i)
-        x2    = ysbdy(i)
-        call diagquad2(ier,eps,npoly,x1,x2,nquad,xs,ys,whts)
-        xsall(1:nquad,i+ndisc)   = xs(1:nquad)
-        ysall(1:nquad,i+ndisc)   = ys(1:nquad)
-        whtsall(1:nquad,i+ndisc) = whts(1:nquad)
-        nquadall(i+ndisc)        = nquad
         end do
 !$OMP   END DO
 !$OMP   END PARALLEL
@@ -253,13 +154,13 @@ c
         write(iw,0100) "subroutine singquads2(nquadsall,xsall," //
      -    "ysall,whtsall)"
         write(iw,0100) "implicit double precision (a-h,o-z)"
-        write(iw,0100) "double precision :: xsall(300,:)"
-        write(iw,0100) "double precision :: ysall(300,:)"
-        write(iw,0100) "double precision :: whtsall(300,:)"
-        write(iw,0100) "integer          :: nquadsall(:)"
+        write(iw,0150) "xsall",nmax,ndisc
+        write(iw,0150) "ysall",nmax,ndisc
+        write(iw,0150) "whtsall",nmax,ndisc
+        write(iw,0175) "nquadsall",ndisc
 c
 
-        do i=1,ndisc+nquadbdy
+        do i=1,ndisc
         nq = nquadall(i)
         write(iw,1100) i,nq
         do j=1,nq
@@ -281,13 +182,12 @@ c
         iw = 1001
         open(iw,FILE='quads.f90',STATUS='OLD',ACCESS='append')
 
-        write(iw,0100) "subroutine discquad_info(nquad,nquadbdy," //
-     -    "npoly)"
+        write(iw,0100) "subroutine discquad_info(nquad,npoly,nmax)"
         
         write(iw,0100) "implicit double precision (a-h,o-z)"
         write(iw,2100) "nquad",ndisc
-        write(iw,2100) "nquadbdy",nquadbdy
         write(iw,2100) "npoly",npoly
+        write(iw,2100) "nmax",nmax
         write(iw,0100) "end subroutine"
         write(iw,*)    ""
         write(iw,*)    ""
@@ -297,7 +197,8 @@ c
 
 
 
-        subroutine diagquad(ier,eps,npoly,x1,x2,nquad,xs,ys,whts)
+        subroutine diagquad(ier,eps,epsadap,npoly,x1,x2,
+     -    nquad,xs,ys,whts,xx)
         implicit double precision (a-h,o-z)
         dimension                     :: ab0(2,100)
         double precision, allocatable :: disc(:),coefs(:,:)
@@ -307,7 +208,7 @@ c
         double precision              :: xs(1),ys(1),whts(1)
         double precision              :: verts(2,3)
         integer, allocatable          :: idxs(:)
-        external funuser1,funuser2,funeval,funquad4,funquad5
+        external funuser1,funuser2,funeval,funquad1,funquad2
 c
 c       Build a tensor product quadrature on [-1,1] x [-1,1] for integrals of
 c       the form
@@ -356,20 +257,23 @@ c
 c
         kdisc = 30
         nquad = 0
-c
  0100 continue
         a      = -1.0d0
         b      =  1.0d0
         nfuns1 = (npoly+1)*(npoly+2)/2 + npoly+1
 c
-        nints0    = 1
+        nints0    = 2
         ab0(1,1)  = a
-        ab0(2,1)  = b
+        ab0(2,1)  = 0
+c
+        ab0(1,2)  = 0
+        ab0(2,2)  = b
         kdisc     = kdisc+1
+        ifadap    = 1
 c
         call prinf("nfuns1 = *",nfuns1,1)
-        call legedisc(ier,nints0,ab0,kdisc,eps,nfuns1,
-     -    funuser1,npoly,x1,x2,par4,disc,ldisc,ncoefs,lkeep)
+        call legedisc(ier,ifadap,nints0,ab0,kdisc,eps,nfuns1,
+     -    funuser1,npoly,x1,x2,eps,disc,ldisc,ncoefs,lkeep)
         if (ier .ne. 0) then
         call prinf("after legedisc, ier = *",ier,1)
         stop
@@ -379,9 +283,10 @@ c       Gram-Schmidt the input functions.
 c
         allocate(coefs(ncoefs,nfuns1))
 c
-        call legegs(eps,disc,nfuns1,funuser1,npoly,x1,x2,par4,
+        call legegs(eps,disc,nfuns1,funuser1,npoly,x1,x2,eps,
      1    krank,coefs)
         call prinf("after legegs, krank=*",krank,1)
+c
 c
 c       Fetch the initial, oversampled, quadrature rule.
 c
@@ -393,6 +298,7 @@ c
         call chebquad(krank,funeval,disc,coefs,krank,par4,
      1    nquad0,xs0,whts0,nquad1,xs1,whts1,rints)
 c
+c
 c       Build the Gaussian quadrature.
 c
         ifaccept = 0
@@ -403,8 +309,8 @@ c
 c
         deallocate(coefs,xs0,whts0)
 c
-        ngoal = (krank+1)/2+1
-        if (nquad1 .gt. ngoal) goto 0100
+c        ngoal = (krank+1)/2+1
+c        if (nquad1 .gt. ngoal) goto 0100
 c
         do i=1,nquad1
         idxs(i) = i
@@ -431,14 +337,18 @@ c
         a      = -1.0d0
         b      =  1.0d0
 c
-        nints0    = 1
+        nints0    = 2
         ab0(1,1)  = a
-        ab0(2,1)  = b
+        ab0(2,1)  = 0
+        ab0(1,2)  = 0
+        ab0(2,2)  = b
         kdisc     = kdisc+1
-        nfuns2    = (npoly+1) + (npoly+1)
+        nfuns2    = (npoly+1)*2
+        ifadap    = 1
 c
-        call legedisc(ier,nints0,ab0,kdisc,eps,nfuns2,
+        call legedisc(ier,ifadap,nints0,ab0,kdisc,eps,nfuns2,
      -    funuser2,npoly,x1,x2,y2,disc,ldisc,ncoefs,lkeep)
+c
 c
 c       Gram-Schmidt the input functions.
 c
@@ -459,8 +369,7 @@ c       Compute the Chebyshev quadrature.
 c
         call chebquad(krank,funeval,disc,coefs,krank,par4,
      1    nquad0,xs0,whts0,nquad2,xs2,whts2,rints)
-c
-c
+
 c
 c       Build the Gaussian quadrature.
 c
@@ -471,22 +380,21 @@ c
      1    par4,nquad2,xs2,whts2,a,b,ngoal,ifaccept)
 c
         deallocate(coefs,xs0,whts0)
-        ngoal = (krank+1)/2+1
-        if (nquad2 .gt. ngoal) goto 0200
+c$$$        ngoal = (krank+1)/2+1
+c$$$        if (nquad2 .gt. ngoal) goto 0200
         do i=1,nquad2
         idxs(i) = i
         end do
         call quicksort(nquad2,xs2,idxs)
         whts2(1:nquad2)  = whts2(idxs(1:nquad2))
-c        xs2(1:nquad2) = xs2(1:nquad2) + x1
 
         call prin2("xs2    = *",xs2,nquad2)
         call prin2("whts2  = *",whts2,nquad2)
 c
         do i=1,nquad2
         nquad       = nquad+1
-        xs(nquad)   = xs2(i)
-        ys(nquad)   = xs1(idisc)
+        xs(nquad)   = xs2(i)     
+        ys(nquad)   = xs1(idisc) 
         whts(nquad) = whts1(idisc)*whts2(i)
         end do
 c
@@ -503,7 +411,6 @@ c       Test the resulting quadrature rule
 c
         
         allocate(errs( (npoly+1)*(npoly+2) ) )
-c
         idx = 0
 
         do nn1=0,npoly
@@ -517,7 +424,7 @@ c
         verts(1,3) =  1
         verts(2,3) =  1
 c
-        call adaptri(ier,eps,verts,funquad4,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad1,x1,x2,i1,j1,
      1    val1,nquad01)
 c
         verts(1,1) = -1
@@ -527,7 +434,7 @@ c
         verts(1,3) =  1
         verts(2,3) =  1
 c
-        call adaptri(ier,eps,verts,funquad4,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad1,x1,x2,i1,j1,
      1    val2,nquad02)
 c
         val0  = val1+val2
@@ -537,7 +444,7 @@ c
         x   = xs(i)
         y   = ys(i)
         wht = whts(i)
-        call funquad4(x,y,x1,x2,i1,j1,val00)
+        call funquad1(x,y,x1,x2,i1,j1,val00)
         val = val + wht*val00
         end do
 c
@@ -558,7 +465,7 @@ c
         verts(1,3) =  1
         verts(2,3) =  1
 c
-        call adaptri(ier,eps,verts,funquad5,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad2,x1,x2,i1,j1,
      1    val1,nquad01)
 c
         verts(1,1) = -1
@@ -568,7 +475,7 @@ c
         verts(1,3) =  1
         verts(2,3) =  1
 c
-        call adaptri(ier,eps,verts,funquad5,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad2,x1,x2,i1,j1,
      1    val2,nquad02)
 c
         val0  = val1+val2
@@ -578,12 +485,13 @@ c
         x   = xs(i)
         y   = ys(i)
         wht = whts(i)
-        call funquad5(x,y,x1,x2,i1,j1,val00)
+        call funquad2(x,y,x1,x2,i1,j1,val00)
         val = val + wht*val00
         end do
 c
         idx = idx + 1
         errs(idx) = abs(val-val0)
+
 c
         end do
         end do
@@ -592,28 +500,108 @@ c
         call prina("=========================*")
         call prina("*")
 c
-        errmax = maxval(errs)
-        if (errmax .gt. 1.0d-14) then
-           print *,"!!!!!! diagquad  ERROR TOO HIGH"
-           print *,x1,x2,npoly
-           stop           
-        endif
-        
         end
 
 
-
-        subroutine diagquad2(ier,eps,npoly,x1,x2,nquad,xs,ys,whts)
+        subroutine funeval(t,disc,coefs,nfuns,par4,vals,ders,ifders)
         implicit double precision (a-h,o-z)
-        dimension                     :: ab0(2,100)
-        double precision, allocatable :: disc(:),coefs(:,:)
-        double precision, allocatable :: xs0(:),whts0(:),rints(:)
-        double precision, allocatable :: xs1(:),whts1(:),ab(:,:)
-        double precision, allocatable :: xs2(:),whts2(:),errs(:)
-        double precision              :: xs(1),ys(1),whts(1)
-        double precision              :: verts(2,3)
-        integer, allocatable          :: idxs(:)
-        external funuser3,funuser4,funeval,funquad6,funquad7,funquad5
+        dimension vals(1),ders(1)
+        call leged_eval(disc,nfuns,coefs,t,vals,ders,ifders)
+        end
+
+
+        subroutine funquad0(y1,val,x1,x2,y2,ideg,par5,par6,par7,
+     -    par8)
+        implicit double precision (a-h,o-z)
+        call lege0(ideg,y1,pol,der)
+        dd  = log( (x1-y1)**2 + (x2-y2)**2)
+        val = dd*pol
+        end subroutine
+
+
+        subroutine funuser1(y2,vals,npoly,x1,x2,eps)
+        implicit double precision (a-h,o-z)
+        double precision vals(1),pols(0:100)
+        external funquad0
+c
+        a    = -1.0d0
+        b    =  1.0d0
+        m    = 30
+        ideg = 0
+c
+        call lege(npoly+1,y2,pols)
+c
+        idx  = 0 
+        do ndeg=0,npoly
+        do ideg1=0,ndeg
+        ideg2 = ndeg-ideg1
+        call adapgauss(ier,a,b,eps,m,val,funquad0,x1,x2,y2,
+     1    ideg1,par5,par6,par7,par8)
+        idx       = idx + 1
+        vals(idx) = val*pols(ideg2)
+        end do
+        end do
+
+        do ideg=0,npoly
+        idx = idx + 1
+        vals(idx) = pols(ideg)
+        end do
+
+        return
+        end subroutine
+
+
+
+        subroutine funuser2(y1,vals,npoly,x1,x2,y2)
+        implicit double precision (a-h,o-z)
+        dimension ns(1),ys2(1),pols(0:100),vals(1)
+        external funquad1
+c
+c
+        call lege(npoly+1,y1,pols)
+c
+        dd = log((x1-y1)**2 + (x2-y2)**2)
+        idx   = 0
+c
+        do i=0,npoly
+        idx       = idx + 1
+        vals(idx) = pols(i)*dd
+        end do
+c
+        do i=0,npoly
+        idx       = idx + 1
+        vals(idx) = pols(i)
+        end do
+c
+        end subroutine
+
+
+        subroutine funquad1(y1,y2,x1,x2,i1,j1,val)
+        implicit double precision (a-h,o-z)
+        dimension pols1(0:100)
+        dimension pols2(0:100)
+        call lege(i1,y1,pols1)
+        call lege(j1,y2,pols2)
+        val = log( (x1-y1)**2 + (x2-y2)**2) * pols1(i1)*pols2(j1)
+        end subroutine
+
+
+        subroutine funquad2(y1,y2,x1,x2,i1,j1,val)
+        implicit double precision (a-h,o-z)
+        dimension pols1(0:100)
+        dimension pols2(0:100)
+        call lege(i1,y1,pols1)
+        call lege(j1,y2,pols2)
+        val = pols1(i1)*pols2(j1)
+        end subroutine
+
+
+
+
+        subroutine diagquad2(ier,eps,epsadap,npoly,x1,x2,
+     -   nquad,xs,ys,whts)
+        implicit double precision (a-h,o-z)
+        dimension xs(1),ys(1),whts(1)
 c
 c       Build a tensor product quadrature on [-1,1] x [-1,1] for integrals of
 c       the form
@@ -643,61 +631,81 @@ c             ier   =  0 indicates successful execution
 c             ier   =  
 c         (nquad,xs,ys,whts) - the output quadrature rule
 c 
+        dimension thetas(4),rect(4),ab0(2,100),verts(2,3)
+        double precision, allocatable :: disc(:),coefs(:,:)
+        double precision, allocatable :: xslege(:),whtslege(:)
+        double precision, allocatable :: xs0(:),whts0(:)
+        double precision, allocatable :: xs1(:),whts1(:)
+        double precision, allocatable :: rints(:),errs(:)
+        integer, allocatable          :: idxs(:)
+        external funuser3,funeval,funquad3,funquad4,funquad5
+c
+        allocate(xs1(1000),whts1(1000),rints(1000),idxs(1000))
+
         ier = 0
+        pi  = acos(-1.0d0)
 c
-c       First build a quadrature for integrating the functions F_ij, G_ij
-c       defined via
+        nlege = npoly/2+1
+        allocate(xslege(nlege),whtslege(nlege))
+        call legequad(nlege,xslege,whtslege)
 c
-c                                1
-c         F_ij(y2) = P_i(y2) \int   ( (x1-y1) / ( (x1-y1)^2 + (x2-y2)^2 ) P_j(y1) dy1
-c                               -1
+c       Determine the coordinates
 c
-c       and
+        a   = -1-x1
+        b   =  1-x1
 c
-c                                1
-c         G_ij(y2) = P_i(y2) \int   ( (x2-y2)/ ( (x1-y1)^2 + (x2-y2)^2 ) P_j(y1)  dy1
-c                               -1
+        c   = -1-x2
+        d   =  1-x2
 c
-c       where 0<= i1+j1, j2 <= npoly and P_n denotes the Legendre polynomial of degree n.
+        rect(1)   = a
+        rect(2)   = c
+        rect(3)   = b
+        rect(4)   = d
 c
-        call prin2("in diagquad2, x1 = *",x1,1)
-        call prin2("in diagquad2, x2 = *",x2,1)
-        call prinf("in diagquad2, npoly = *",npoly,1)
+        thetas(1) = atan2(d,b)
+        thetas(2) = atan2(d,a)
+        thetas(3) = atan2(c,a)
+        thetas(4) = atan2(c,b)
+c
+        do i=1,4
+        if (thetas(i) .lt. 0) thetas(i) = thetas(i) + 2*pi
+        end do
+c
+        ifadap   = 1
+        kdisc    = 30
+        nints0   = 5
+        ab0(1,1) = 0.0d0
+        ab0(2,1) = thetas(1)
+        ab0(1,2) = thetas(1)
+        ab0(2,2) = thetas(2)
+        ab0(1,3) = thetas(2)
+        ab0(2,3) = thetas(3)
+        ab0(1,4) = thetas(3)
+        ab0(2,4) = thetas(4)
+        ab0(1,5) = thetas(4)
+        ab0(2,5) = 2*pi
 c
         ldisc = 100 000 000
         allocate(disc(ldisc))
-        allocate(xs1(1000),whts1(1000),rints(1000),idxs(1000))
-        allocate(xs2(1000),whts2(1000))
 c
-        kdisc = 30
-        nquad = 0
-c
- 0100 continue
-        a         = -1.0d0
-        b         =  1.0d0
-        nfuns3    = (npoly+1) + (npoly+1)*(npoly+2)
-c
-        nints0    = 2
-        ab0(1,1)  = a
-        ab0(2,1)  = x2-eps
-        ab0(1,2)  = x2+eps
-        ab0(2,2)  = b
-
-        kdisc     = kdisc+1
-c
+        nfuns3 = (npoly+2)*(npoly+1)**2
         call prinf("nfuns3 = *",nfuns3,1)
-        call legedisc(ier,nints0,ab0,kdisc,eps,nfuns3,
-     -    funuser3,npoly,x1,x2,par4,disc,ldisc,ncoefs,lkeep)
+ 1000 continue
+        kdisc = kdisc+1
+c
+        call legedisc(ier,ifadap,nints0,ab0,kdisc,eps,nfuns3,
+     -    funuser3,npoly,thetas,rect,par4,disc,ldisc,ncoefs,lkeep)
         if (ier .ne. 0) then
         call prinf("after legedisc, ier = *",ier,1)
         stop
         endif
 c
+        call prinf("after legedisc, ncoefs = *",ncoefs,1)
+c
 c       Gram-Schmidt the input functions.
 c
         allocate(coefs(ncoefs,nfuns3))
-c
-        call legegs(eps,disc,nfuns3,funuser3,npoly,x1,x2,par4,
+        call legegs(eps,disc,nfuns3,funuser3,npoly,thetas,rect,par4,
      1    krank,coefs)
         call prinf("after legegs, krank=*",krank,1)
 c
@@ -711,114 +719,67 @@ c
         call chebquad(krank,funeval,disc,coefs,krank,par4,
      1    nquad0,xs0,whts0,nquad1,xs1,whts1,rints)
 c
-c       Build the Gaussian quadrature.
-c
         ifaccept = 0
         ngoal    = 0
+        a        = 0
+        b        = 2*pi
 c
         call gaussquad(eps,krank,rints,funeval,disc,coefs,krank,
      1    par4,nquad1,xs1,whts1,a,b,ngoal,ifaccept)
-c
         deallocate(coefs,xs0,whts0)
-c
-        ngoal = (krank+1)/2+1
-        if (nquad1 .gt. ngoal) goto 0100
-c
-        do i=1,nquad1
-        idxs(i) = i
-        end do
-        call quicksort(nquad1,xs1,idxs)
-        whts1(1:nquad1)  = whts1(idxs(1:nquad1))
-        xs1(1:nquad1) = xs1(1:nquad1)
-        call prin2("xs1    = *",xs1,nquad1)
-        call prin2("whts1  = *",whts1,nquad1)
-c
-c       For each point y2 in the preceeding quadrature rule, build
-c       a quadrature for the functions
-c
-c             1
-c        \int    ( log ( (x1-y1)^2 + (x2-y2)^2 ) P_i(y1)  ) dy1 
-c            -1
-c
-c       where 0<= i <= npoly.
-c
-        do idisc=1,nquad1
-        y2    = xs1(idisc)
-        kdisc = 30
- 0200 continue
-        a      = -1.0d0
-        b      =  1.0d0
-c
-        nints0    = 2
-        ab0(1,1)  = a
-        ab0(2,1)  = x1-eps
-        ab0(1,2)  = x1+eps
-        ab0(2,2)  = b
-        kdisc     = kdisc+1
-        nfuns4    = 3*(npoly+1)
-c
-        call legedisc(ier,nints0,ab0,kdisc,eps,nfuns4,
-     -    funuser4,npoly,x1,x2,y2,disc,ldisc,ncoefs,lkeep)
-c
-c       Gram-Schmidt the input functions.
-c
-        allocate(coefs(ncoefs,nfuns4))
-c
-        call prinf("before legegs, nfuns4 = *",nfuns4,1)
-        call legegs(eps,disc,nfuns4,funuser4,npoly,x1,x2,y2,
-     1    krank,coefs)
-        call prinf("after legegs, krank=*",krank,1)
-c
-c       Fetch the initial, oversampled, quadrature rule.
-c
-        allocate(xs0(ncoefs),whts0(ncoefs))
-        call legedisc_quad(disc,nquad0,xs0,whts0)
-c
-c       Compute the Chebyshev quadrature.
-c
-        call chebquad(krank,funeval,disc,coefs,krank,par4,
-     1    nquad0,xs0,whts0,nquad2,xs2,whts2,rints)
-c
-c
-c       Build the Gaussian quadrature.
-c
-        ifaccept = 0
-        ngoal    = 0
-c
-        call gaussquad(eps,krank,rints,funeval,disc,coefs,krank,
-     1    par4,nquad2,xs2,whts2,a,b,ngoal,ifaccept)
-c
-        deallocate(coefs,xs0,whts0)
-        ngoal = (krank+1)/2+1
-        if (nquad2 .gt. ngoal) goto 0200
-        do i=1,nquad2
-        idxs(i) = i
-        end do
-        call quicksort(nquad2,xs2,idxs)
-        whts2(1:nquad2)  = whts2(idxs(1:nquad2))
+        if (ier .ne. 0) goto 1000
 
-        call prin2("xs2    = *",xs2,nquad2)
-        call prin2("whts2  = *",whts2,nquad2)
+        call prinf("krank = *",krank,1)
+        call prinf("nquad1= *",nquad1,1)
 c
-        do i=1,nquad2
-        nquad       = nquad+1
-        xs(nquad)   = xs2(i) 
-        ys(nquad)   = xs1(idisc) 
-        whts(nquad) = whts1(idisc)*whts2(i)
+c       Build the tensor product quadrature
+c
+        nquad = 0
+
+        do i=1,nquad1
+
+        t    = xs1(i)
+        twht = whts1(i)
+
+        r1   = 0
+        call rfun(rect,thetas,t,r2)
+
+        do j=1,nlege
+        r    =   xslege(j)*(r2-r1)/2 + (r2-r1)/2
+        rwht = whtslege(j)*(r2-r1)/2
+c
+        x    = r*cos(t)
+        y    = r*sin(t)
+        wht  = twht*rwht*r
+c
+        nquad = nquad+1
+        xs(nquad)   = x      + x1
+        ys(nquad)   = y      + x2
+        whts(nquad) = wht
         end do
         end do
 c
+        call prinf("in diagquad2, final nquad = *",nquad,1)
+        call prin2("in diagquad2, final xs    = *",xs,nquad)
+        call prin2("in diagquad2, final ys    = *",ys,nquad)
+        call prin2("in diagquad2, final whts  = *",whts,nquad)
 c
-        call prina("*")
-        call prina("=========================*")
-        call prinf("final nquad = *",nquad,1)
-        call prin2("final xs    = *",xs,nquad)
-        call prin2("final ys    = *",ys,nquad)
-        call prin2("final whts  = *",whts,nquad)
+c$$$        sum1 = 0
+c$$$        do i=1,nquad
+c$$$           x    = xs(i)
+c$$$           y    = ys(i)
+c$$$           wht  = whts(i)
+c$$$           val  = (y-x2)/((x-x1)**2+(y-x2)**2)
+c$$$           sum1 = sum1 + val*wht
+c$$$        end do
+c$$$        print *,sum1
 c
-c       Test the resulting quadrature rule
-c        
-        allocate(errs( (npoly+1)*(npoly+2)/2*3 ) )
+c       Test the newly constructed quadrature rule thoroughly via comparison
+c       with results obtained via adaptive quadrature
+c
+        nn = (npoly+1)*(npoly+2)/2*3
+
+        allocate(errs(nn))
 c
         idx = 0
 
@@ -826,34 +787,92 @@ c
         do i1=0,nn1
         j1 = nn1-i1
 c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) =  1
-        verts(2,2) = -1
-        verts(1,3) =  1
-        verts(2,3) =  1
+        verts(1,1) = -1-x1
+        verts(2,1) = -1-x2
+        verts(1,2) =  1-x1
+        verts(2,2) = -1-x2
+        verts(1,3) =  1-x1
+        verts(2,3) =  1-x2
 c
-        call adaptri(ier,eps,verts,funquad6,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad3,x1,x2,i1,j1,
      1    val1,nquad01)
+        if (ier .ne. 0) then
+           print *,"!"
+           stop
+        endif
 c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) = -1
-        verts(2,2) =  1
-        verts(1,3) =  1
-        verts(2,3) =  1
+        verts(1,1) = -1-x1
+        verts(2,1) = -1-x2
+        verts(1,2) = -1-x1
+        verts(2,2) =  1-x2
+        verts(1,3) =  1-x1
+        verts(2,3) =  1-x2
 c
-        call adaptri(ier,eps,verts,funquad6,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad3,x1,x2,i1,j1,
      1    val2,nquad02)
+        if (ier .ne. 0) then
+           print *,"!"
+           stop
+        endif
 c
         val0  = val1+val2
 c
         val  = 0
         do i=1,nquad
-        x   = xs(i)
-        y   = ys(i)
+        x   = xs(i)-x1
+        y   = ys(i)-x2
         wht = whts(i)
-        call funquad6(x,y,x1,x2,i1,j1,val00)
+        call funquad3(x,y,x1,x2,i1,j1,val00)
+        val = val + wht*val00
+        end do
+c
+c
+        idx = idx + 1
+        errs(idx) = abs(val-val0)
+c
+        end do
+        end do
+c
+        do nn1=0,npoly
+        do i1=0,nn1
+        j1 = nn1-i1
+c
+        verts(1,1) = -1-x1
+        verts(2,1) = -1-x2
+        verts(1,2) =  1-x1
+        verts(2,2) = -1-x2
+        verts(1,3) =  1-x1
+        verts(2,3) =  1-x2
+c
+        call adaptri(ier,epsadap,verts,funquad4,x1,x2,i1,j1,
+     1    val1,nquad01)
+        if (ier .ne. 0) then
+           print *,"!"
+           stop
+        endif
+
+c
+        verts(1,1) = -1-x1
+        verts(2,1) = -1-x2
+        verts(1,2) = -1-x1
+        verts(2,2) =  1-x2
+        verts(1,3) =  1-x1
+        verts(2,3) =  1-x2
+c
+        call adaptri(ier,epsadap,verts,funquad4,x1,x2,i1,j1,
+     1    val2,nquad02)
+        if (ier .ne. 0) then
+           print *,"!"
+           stop
+        endif
+
+        val0 = val1+val2
+        val  = 0
+        do i=1,nquad
+        x   = xs(i)-x1
+        y   = ys(i)-x2
+        wht = whts(i)
+        call funquad4(x,y,x1,x2,i1,j1,val00)
         val = val + wht*val00
         end do
 c
@@ -874,8 +893,13 @@ c
         verts(1,3) =  1
         verts(2,3) =  1
 c
-        call adaptri(ier,eps,verts,funquad7,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad5,x1,x2,i1,j1,
      1    val1,nquad01)
+        if (ier .ne. 0) then
+           print *,"!"
+           stop
+        endif
+
 c
         verts(1,1) = -1
         verts(2,1) = -1
@@ -884,49 +908,13 @@ c
         verts(1,3) =  1
         verts(2,3) =  1
 c
-        call adaptri(ier,eps,verts,funquad7,x1,x2,i1,j1,
+        call adaptri(ier,epsadap,verts,funquad5,x1,x2,i1,j1,
      1    val2,nquad02)
-c
-        val0  = val1+val2
-c
-        val  = 0
-        do i=1,nquad
-        x   = xs(i)
-        y   = ys(i)
-        wht = whts(i)
-        call funquad7(x,y,x1,x2,i1,j1,val00)
-        val = val + wht*val00
-        end do
-c
-        idx = idx + 1
-        errs(idx) = abs(val-val0)
-c
-        end do
-        end do
-c
-        do nn1=0,npoly
-        do i1=0,nn1
-        j1 = nn1-i1
-c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) =  1
-        verts(2,2) = -1
-        verts(1,3) =  1
-        verts(2,3) =  1
-c
-        call adaptri(ier,eps,verts,funquad5,x1,x2,i1,j1,
-     1    val1,nquad01)
-c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) = -1
-        verts(2,2) =  1
-        verts(1,3) =  1
-        verts(2,3) =  1
-c
-        call adaptri(ier,eps,verts,funquad5,x1,x2,i1,j1,
-     1    val2,nquad02)
+        if (ier .ne. 0) then
+           print *,"!"
+           stop
+        endif
+
 c
         val0  = val1+val2
 c
@@ -944,62 +932,130 @@ c
 c
         end do
         end do
-
-        call prin2("errs = *",errs,idx)
-        call prina("=========================*")
-        call prina("*")
 c
-        errmax = maxval(errs)
-        if (errmax .gt. 1.0d-14) then
-           print *,"!!!!! diagquad2  ERROR TOO HIGH"
-           print *,x1,x2,npoly
-           stop           
+        call prina("*")
+        call prina("-----------------------------------------*")
+        call prin2("errs = *",errs,idx)
+        call prina("-----------------------------------------*")
+
+        call prina("*")
+        
+c
+        end
+
+
+        subroutine funuser3(theta,vals,npoly,thetas,rect,par4)
+        implicit double precision (a-h,o-z)
+        dimension thetas(4),rect(4),vals(1)
+c
+        call rfun(rect,thetas,theta,r)
+
+        idx = 0
+c
+        do i  = 0,npoly+1
+        do j1 = 0,npoly
+        do j2 = 0,npoly
+        idx       = idx+1
+
+        if (j2 .eq. 0) then
+        vals(idx) =  r**(i+1)*cos(j1*theta)
+        else
+        vals(idx) =  r**(i+1)*cos(j1*theta) * sin(j2*theta)
         endif
 
-        end
+        end do
+        end do
+        end do
+c
+c$$$        do i  = 0,npoly+1
+c$$$        do j1 = 0,i
+c$$$        j2 = i-j1
+c$$$        idx       = idx+1
+c$$$
+c$$$        if (j2 .eq. 0) then
+c$$$        vals(idx) =  r**(i+1)*cos(theta)**j1*cos(theta)
+c$$$        else
+c$$$        vals(idx) =  r**(i+1)*cos(theta)**j1 * sin(theta)**j2*cos(theta)
+c$$$        endif
+c$$$
+c$$$        end do
+c$$$        end do
+c$$$c
+c$$$c
+c$$$        do i  = 0,npoly+1
+c$$$        do j1 = 0,i
+c$$$        j2 = i-j1
+c$$$        idx       = idx+1
+c$$$        if (j2 .eq. 0) then
+c$$$        vals(idx) =  r**(i+1)*cos(theta)**j1*sin(theta)
+c$$$        else
+c$$$        vals(idx) =  r**(i+1)*cos(theta)**j1*sin(theta)**j2*sin(theta)
+c$$$        endif
+c$$$        end do
+c$$$        end do
+c$$$
+c$$$
+c$$$        do i  = 0,npoly+1
+c$$$        do j1 = 0,i
+c$$$        j2 = i-j1
+c$$$        idx       = idx+1
+c$$$
+c$$$        if (j2 .eq. 0) then
+c$$$        vals(idx) =  r**(i+1)*cos(theta)**j1
+c$$$        else
+c$$$        vals(idx) =  r**(i+1)*cos(theta)**j1*sin(theta)**j2
+c$$$        endif
+c$$$
+c$$$        end do
+c$$$        end do
 
-
-
-
-
-        subroutine funeval(t,disc,coefs,nfuns,par4,vals,ders,ifders)
-        implicit double precision (a-h,o-z)
-        dimension vals(1),ders(1)
-        call leged_eval(disc,nfuns,coefs,t,vals,ders,ifders)
-        end
-
-
-        subroutine funquad1(y1,val,x1,x2,y2,ideg,par5,par6,par7,
-     -    par8)
-        implicit double precision (a-h,o-z)
-        call lege0(ideg,y1,pol,der)
-        dd  = log( (x1-y1)**2 + (x2-y2)**2)
-        val = dd*pol
         end subroutine
 
-        subroutine funquad2(y1,val,x1,x2,y2,ideg,par5,par6,par7,
-     -    par8)
+
+        subroutine rfun(rect,thetas,theta,r)
         implicit double precision (a-h,o-z)
-        call lege0(ideg,y1+x1,pol,der)
-        dd  = (x1-y1)/((x1-y1)**2 + (x2-y2)**2)
-        val = dd*pol
+        dimension rect(4),thetas(4)
+
+        a  = rect(1)
+        c  = rect(2)
+        b  = rect(3)
+        d  = rect(4)
+c
+        if (theta .gt. thetas(4)) then
+        r = b/cos(theta)
+        elseif (theta .gt. thetas(3)) then
+        r = c/sin(theta)
+        elseif (theta .gt. thetas(2)) then
+        r = a/cos(theta)
+        elseif (theta .gt. thetas(1)) then
+        r = d/sin(theta)
+        else
+        r = b/cos(theta)
+        endif
+
         end subroutine
 
-        subroutine funquad3(y1,val,x1,x2,y2,ideg,par5,par6,par7,
-     -    par8)
+
+
+        subroutine funquad3(y1,y2,x1,x2,i1,j1,val)
         implicit double precision (a-h,o-z)
-        call lege0(ideg,y1+x1,pol,der)
-        dd  = (x2-y2)/((x1-y1)**2 + (x2-y2)**2)
-        val = dd*pol
+        dimension pols1(0:100)
+        dimension pols2(0:100)
+        call lege(i1,y1+x1,pols1)
+        call lege(j1,y2+x2,pols2)
+        dd = (y1) / ( (y1)**2 + (y2)**2 )
+        val = dd * pols1(i1)*pols2(j1)
+
         end subroutine
 
         subroutine funquad4(y1,y2,x1,x2,i1,j1,val)
         implicit double precision (a-h,o-z)
         dimension pols1(0:100)
         dimension pols2(0:100)
-        call lege(i1,y1,pols1)
-        call lege(j1,y2,pols2)
-        val = log( (x1-y1)**2 + (x2-y2)**2) * pols1(i1)*pols2(j1)
+        call lege(i1,y1+x1,pols1)
+        call lege(j1,y2+x2,pols2)
+        dd = (y2)/( (y1)**2 + (y2)**2 ) 
+        val = dd * pols1(i1)*pols2(j1)
         end subroutine
 
         subroutine funquad5(y1,y2,x1,x2,i1,j1,val)
@@ -1011,180 +1067,7 @@ c
         val = pols1(i1)*pols2(j1)
         end subroutine
 
-
-        subroutine funquad6(y1,y2,x1,x2,i1,j1,val)
-        implicit double precision (a-h,o-z)
-        dimension pols1(0:100)
-        dimension pols2(0:100)
-c
-        call lege(i1,y1,pols1)
-        call lege(j1,y2,pols2)
-        val = (x1-y1)/ ((x1-y1)**2 + (x2-y2)**2) * pols1(i1)*pols2(j1)
-
-        end subroutine
-
-        subroutine funquad7(y1,y2,x1,x2,i1,j1,val)
-        implicit double precision (a-h,o-z)
-        dimension pols1(0:100)
-        dimension pols2(0:100)
-c
-        call lege(i1,y1,pols1)
-        call lege(j1,y2,pols2)
-c
-        val = (x2-y2)/ ((x1-y1)**2 + (x2-y2)**2) * pols1(i1)*pols2(j1)
-c
-        end subroutine
-
-
-
-        subroutine funuser1(y2,vals,npoly,x1,x2,par4)
-        implicit double precision (a-h,o-z)
-        double precision vals(1),pols(0:100)
-        external funquad1,funquad2,funquad3
-
-        a    = -1.0d0
-        b    =  1.0d0
-        m    = 30
-        eps  = epsilon(0.0d0)*100
-        ideg = 0
-c
-        call lege(npoly+1,y2,pols)
-c
-        idx  = 0 
-        do ndeg=0,npoly
-        do ideg1=0,ndeg
-        ideg2 = ndeg-ideg1
-        call adapgauss(ier,a,b,eps,m,val,funquad1,x1,x2,y2,
-     1    ideg1,par5,par6,par7,par8)
-        idx       = idx + 1
-        vals(idx) = val*pols(ideg2)
-        end do
-        end do
-
-        do ideg=0,npoly
-        idx = idx + 1
-        vals(idx) = pols(ideg)
-        end do
-
-        return
-        end subroutine
-
-
-
-        subroutine funuser2(y1,vals,npoly,x1,x2,y2)
-        implicit double precision (a-h,o-z)
-        dimension ns(1),ys2(1),pols(0:100),vals(1)
-        external funquad1
-c
-c
-        call lege(npoly+1,y1,pols)
-c
-        dd = log((x1-y1)**2 + (x2-y2)**2)
-        idx   = 0
-
-        do i=0,npoly
-        idx       = idx + 1
-        vals(idx) = pols(i)*dd
-        end do
-c
-        do i=0,npoly
-        idx       = idx + 1
-        vals(idx) = pols(i)
-        end do
-c
-        end subroutine
-
-
-
-
-
-        subroutine funuser3(y2,vals,npoly,x1,x2,par4)
-        implicit double precision (a-h,o-z)
-        double precision vals(1),pols(0:100)
-        external funquad2,funquad3
-c
-        call lege(npoly+1,y2,pols)
-c
-        eps  = epsilon(0.0d0)*100
-
-        a1    = -1.0d0
-        b1    = x1-eps
-
-        a2    = x1+eps
-        b2    = 1.0d0
-c
-        m    = 30
-        idx  = 0 
-c
-        do ndeg=0,npoly
-        do ideg1=0,ndeg
-        ideg2 = ndeg-ideg1
-        call adapgauss(ier,a1,b1,eps,m,val1,funquad2,x1,x2,y2,
-     1    ideg1,par5,par6,par7,par8)
-        call adapgauss(ier,a2,b2,eps,m,val2,funquad2,x1,x2,y2,
-     1    ideg1,par5,par6,par7,par8)
-        val = val1+val2
-
-        idx       = idx + 1
-        vals(idx) = val*pols(ideg2)
-        end do
-        end do
-c
-        do ndeg=0,npoly
-        do ideg1=0,ndeg
-        ideg2 = ndeg-ideg1
-        call adapgauss(ier,a1,b1,eps,m,val1,funquad3,x1,x2,y2,
-     1    ideg1,par5,par6,par7,par8)
-        call adapgauss(ier,a2,b2,eps,m,val2,funquad3,x1,x2,y2,
-     1    ideg1,par5,par6,par7,par8)
-        val = val1+val2
-
-        idx       = idx + 1
-        vals(idx) = val*pols(ideg2)
-        end do
-        end do
-c
-        do ideg=0,npoly
-        idx       = idx + 1
-        vals(idx) = pols(ideg)
-        end do
-c
-        return
-        end subroutine
-
-
-
-        subroutine funuser4(y1,vals,npoly,x1,x2,y2)
-        implicit double precision (a-h,o-z)
-        dimension ns(1),ys2(1),pols(0:100),vals(1)
-        external funquad1
-c
-c
-        call lege(npoly+1,y1,pols)
-c
-        dd1 = (x1-y1)/((x1-y1)**2 + (x2-y2)**2)
-        dd2 = (x2-y2)/((x1-y1)**2 + (x2-y2)**2)
-c
-        idx   = 0
-
-        do i=0,npoly
-        idx       = idx + 1
-        vals(idx) = pols(i)*dd1
-        end do
-c
-        do i=0,npoly
-        idx       = idx + 1
-        vals(idx) = pols(i)*dd2
-        end do
-c
-        do i=0,npoly
-        idx       = idx + 1
-        vals(idx) = pols(i)
-        end do
-c
-        end subroutine
-
-
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         subroutine discquad_info(nquad0)
         implicit double precision (a-h,o-z)

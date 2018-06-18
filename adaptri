@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export FC="gfortran -w -O3"
+export FC="gfortran -w -O3 -fdefault-real-8"
 export CC="gcc"
 export DSTRIP="./dstrip"
 

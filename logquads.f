@@ -122,8 +122,9 @@ c
         ab0(2,1)  = 0.0d0
         ab0(1,2)  = 0.0d0
         ab0(2,2)  = b
+        ifadap    = 1
 c
-        call legedisc(ier,nints0,ab0,kdisc,eps,nfuns,
+        call legedisc(ier,ifadap,nints0,ab0,kdisc,eps,nfuns,
      -    funuser,npoly,x0,par3,par4,disc,ldisc,ncoefs,lkeep)
         call prinf("after legedisc, ncoefs = *",ncoefs,1)
 c
@@ -300,8 +301,9 @@ c
         b         =  1
         ab0(1,1)  = a
         ab0(2,1)  = b
+        ifadap    = 1
 c
-        call legedisc(ier,nints0,ab0,kdisc,eps,nfuns,
+        call legedisc(ier,ifadap,nints0,ab0,kdisc,eps,nfuns,
      -    funuser2,npoly,nzs,zs,par4,disc,ldisc,ncoefs,lkeep)
         call prinf("after legedisc, ncoefs = *",ncoefs,1)
 c

@@ -39,11 +39,10 @@ with p and q polynomials of specified degrees and for evaluating (1) when x
 is close to, but not contained in, the interval [-1,1].  These are useful in
 discretizing integral operators given on planar curves.
 
-12.  The file gausssq.f contains a code for constructing quadrature rules
-which integrate polynomials of a specified degree over the rectangle
-[-1,1] x [-1,1]
-
-13.  The file logquads2d.f contains code for constructing quadrature rules
+12.  The file logquads2d.f contains code for constructing quadrature rules
 for discretizing integral operators with logarithmically singular kernels
 on planar domains.
 
+13.  The file singquads2d.f contains code for constructing quadrature rules
+for discretizing integral operators whose kernels are the 
+on planar domains.

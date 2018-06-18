@@ -24,12 +24,13 @@ c
         k     = 30
         nfuns = 120
 c
+        ifadap = 1
         nints0    = 1
         ab0(1,1)  = a
         ab0(2,1)  = b
 
-        call legedisc(ier,nints0,ab0,k,epsdisc,nfuns,funuser,nfuns,
-     1    par2,par3,par4,disc,ldisc,ncoefs,lkeep)
+        call legedisc(ier,ifadap,nints0,ab0,k,epsdisc,nfuns,funuser,
+     -    nfuns,par2,par3,par4,disc,ldisc,ncoefs,lkeep)
 c
         call prinf("after legedisc, ier = *",ier,1)
         call prinf("after legedisc, ncoefs = *",ncoefs,1)
@@ -137,15 +138,6 @@ c       represented as coefficient expansions at a user-specified
 c       point; it can also (optionally) evaluate the derivatives of 
 c       the coefficient expansions
 c
-c   legedisc2 - this subroutine constructs a piecewise Legendre
-c       quadrature scheme sufficient for representing a user-specified
-c       collection of functions.  The only difference between this
-c       routine and legedisc is the calling syntax for the external
-c       subroutine supplying the values of the user-specified functions.
-c
-c   legedisc3 - this subroutine builds a disc structure describing
-c       a piecewise discretization scheme provided entirely by the user
-c
 c   legedisc_ab - return the list of discretization subintervals
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -154,258 +146,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
 
-        subroutine legedisc2(ier,ngrid,xs0,k,eps,nfuns,
-     -    funuser,par1,par2,par3,par4,disc,ldisc,ncoefs,lkeep)
-        implicit double precision (a-h,o-z)
-        dimension disc(1),xs0(1)
-        external funuser
 c
-c       Construct a piecewise Legendre scheme discretizing a collection
-c       of user-supplied input functions given over an interval.  
-c 
-c       A structure describing the resulting scheme will be returned in
-c       the user-supplied array disc.
-c
-c       IMPORTANT NOTE: the only difference between this routine and 
-c       legedisc is the calling syntax for fununser.
-c
-c                          Input Parameters:
-c
-c   (a,b) - the interval over which the input functions are given
-c   k - the number of nodes used in the piecewise expansions on each
-c       interval
-c   eps - precision for the discretizations
-c   nfuns - the number of input functions
-c   funuser - an external subroutine supplying the values of the
-c       input functions at a point
-c
-c       funuser(x,ifun,val,par1,par2,par3,par4)
-c
-c
-c   ldisc - the length of the user-supplied disc array
-c
-c                         Output Parameters:
-c
-c   ier - an error return code;
-c       ier = 0    indicates successful execution
-c       ier = 4    means that the user-supplied disc array is of
-c                  insufficient length
-c       ier = 8    the internal stack used during discretization 
-c                  overflowed before the desired precision could be
-c                  achieved
-c       ier = 16   means that the maximum number of discretization
-c                  intervals was exceeded before the desired precision
-c                  could be achieved
-c
-c   disc - upon return, this user-supplied array will contain a
-c       structure describing the discretization
-c
-        ier = 0
-        ncoefs = 0
-c
-        maxints = 100 000
-c
-c       Allocate memory from the disc array for the quadrature and
-c       interval list.
-c
-        ixs = 1000
-        lxs = k
-c     
-        iwhts = ixs+lxs
-        lwhts = k
-c
-        iu = iwhts+lwhts
-        lu = k**2
-c
-        iv = iu+lu
-        lv = k**2
-c
-        iab = iv+lv
-        lab = maxints*2
-c
-        iw = iab+lab
-        lw = ldisc-iw
-c
-        if (lw .le. 0) then
-        ier = 4
-        return
-        endif
-c
-        lkeep = iw
-c
-c       Fetch the k-point Chebyshev quadrature data.
-c
-        call legendre(k,disc(ixs),disc(iwhts),disc(iu),disc(iv))
-c
-c       Construct the subintervals.
-c
-        call discfuns2(ier,eps,ngrid,xs0,nfuns,funuser,par1,par2,par3,
-     -     par4,maxints,disc(iab),nints,k,disc(ixs),disc(iwhts),
-     -     disc(iu))
-        if (ier .ne. 0) return
-c
-        call prin2("in legedisc, ab = *",disc(iab),2*nints)
-c
-        ncoefs=nints*k
-c
-c       Build the structure header.
-c
-        disc(1) = k
-        disc(2) = nints
-        disc(3) = a
-        disc(4) = b
-c
-        disc(10) = k
-        disc(11) = ixs
-        disc(12) = iwhts
-        disc(13) = iu
-c
-        disc(20) = nints
-        disc(21) = iab
-        disc(22) = 1
-c
-        end
-
-
-        subroutine discfuns2(ier,eps,ngrid,xs0,nfuns,
-     -     funuser,par1,par2,par3,par4,maxints,ab,nints,k,xs,whts,u)
-        implicit double precision (a-h,o-z)
-        dimension ab(2,maxints),xs(1),whts(1),u(k,k),xs0(1)
-c        dimension stack(2,100 000),vals(k,nfuns),vals0(nfuns+100)
-c
-        double precision, allocatable :: vals(:,:),stack(:,:)
-        external funuser
-c
-c       Discretize a collection of input functions given over the
-c       interval [a,b].  
-c
-        ier  = 0
-        nints = 0
-c
-        maxstack = 20 000
-c
-        allocate(vals(k,nfuns),stack(2,maxstack))
-c
-c       Initialize the stack.
-c     
-        istack=0
-        do 0100 i=1,ngrid-1
-        a = xs0(i)
-        b = xs0(i+1)
-c
-        istack=istack+1
-        stack(1,istack)=a
-        stack(2,istack)=b
- 0100 continue
- 1000 continue
-c
-c       Pop an entry off the stack.
-c
-        if (istack .eq. 0) goto 3000
-c
-        aa = stack(1,istack)
-        bb = stack(2,istack)
-        istack=istack-1
-c
-        alpha = (bb-aa)/2
-        beta  = (bb+aa)/2
-c
-c       Evaluate the input functions.
-c
-        do 1100 i=1,k
-        x=alpha*xs(i)+beta
-        wht = whts(i)*alpha
-c
-        do 1200 j=1,nfuns
-        call funuser(x,j,val,par1,par2,par3,par4)
-        vals(i,j)=val*sqrt(wht)
- 1200 continue
- 1100 continue
-c
-c       Check the trailing coefficients.
-c
-        do 1300 j=1,nfuns
-c
-        i = 1
-        dd=0
-        do 1350 l=1,k
-        dd=dd+u(i,l)*vals(l,j)
- 1350 continue
-c
-c        do 1400 i=k/2+1,k
-        do 1400 i=k-6,k
-        sum=0
-        do 1500 l=1,k
-        sum=sum+u(i,l)*vals(l,j)
- 1500 continue
-c
-         if( abs(sum) .gt. eps) then
-c         if( abs(sum/dd)*alpha .gt. eps) then
-         goto 2000
-         endif
-c
- 1400 continue
- 1300 continue
-c
-c       Accept the interval.
-c
-        if (nints .eq. maxints) then
-        ier=16
-        return
-        endif
-c
-        nints=nints+1
-        ab(1,nints)=aa
-        ab(2,nints)=bb
-c
-        goto 1000
-c
-c       Split the interval.
-c
- 2000 continue
-c
-        cc=(aa+bb)/2
-c
-        if (istack+2 .gt. maxstack) then
-        ier=8
-        return
-        endif
-c
-        istack=istack+1
-        stack(1,istack)=aa
-        stack(2,istack)=cc
-c
-        istack=istack+1
-        stack(1,istack)=cc
-        stack(2,istack)=bb
-c
-        goto 1000
-c
- 3000 continue
-c
-c       Sort the resulting interval list.
-c
-        call insort0(2*nints,ab)
-        end
-c
-
-        subroutine legedisc_ab(disc,nints,ab)
-        implicit double precision (a-h,o-z)
-        dimension disc(1),ab(2,1)
-c
-        nints = disc(20)
-        iab   = disc(21)
-
-        do i=1,nints
-        ab(1,i) = disc(iab+(i-1)*2)
-        ab(2,i) = disc(iab+(i-1)*2+1)
-        end do
-c        
-        end subroutine
-c
-c
-c
-        subroutine legedisc(ier,nints0,ab0,k,eps,nfuns,
+        subroutine legedisc(ier,ifadap,nints0,ab0,k,eps,nfuns,
      -    funuser,par1,par2,par3,par4,disc,ldisc,ncoefs,lkeep)
         implicit double precision (a-h,o-z)
         dimension disc(1),xs0(1),ab0(2,1)
@@ -419,6 +161,9 @@ c       the user-supplied array disc.
 c
 c                          Input Parameters:
 c
+c   ifadap - a flag indiciating whether or not to conduct adaptive
+c       discretization of a collection of functions in order
+c       to refine the initial user-specified discretization scheme
 c   (nints0,ab0) - an initial discretization scheme
 c   k - the number of nodes used in the piecewise expansions on each
 c       interval
@@ -489,13 +234,20 @@ c
 c
 c       Construct the subintervals.
 c
+        if (ifadap .eq. 1) then
         call discfuns(ier,eps,nints0,ab0,nfuns,funuser,par1,par2,par3,
      -     par4,maxints,disc(iab),nints,k,disc(ixs),disc(iwhts),
      -     disc(iu))
-c
-c
-        call prinf("ier=*",ier,1)
         if (ier .ne. 0) return
+
+        else
+        nints = nints0
+        do i=1,nints
+        disc(iab+2*(i-1))   = ab0(1,i)
+        disc(iab+2*(i-1)+1) = ab0(2,i)
+        end do
+        endif
+c
 c
         call prin2("in legedisc, ab = *",disc(iab),2*nints)
 c
@@ -531,7 +283,7 @@ c
 c
 c       Discretize a collection of input functions given over the
 c
-        ier  = 0
+        ier    = 0
         nints = 0
 c
         maxstack = 20 000
@@ -556,7 +308,6 @@ c
 c       Pop an entry off the stack.
 c
         if (istack .eq. 0) goto 3000
-c
 c
         aa = stack(1,istack)
         bb = stack(2,istack)
@@ -587,16 +338,17 @@ c
         do 1350 l=1,k
         dd=dd+u(i,l)*vals(l,j)
  1350 continue
+        dd = abs(dd)
+        dd = max(1.0d0,dd)
 c
 c        do 1400 i=k/2+1,k
-        do 1400 i=k-6,k
+        do 1400 i=k-8,k
         sum=0
         do 1500 l=1,k
         sum=sum+u(i,l)*vals(l,j)
  1500 continue
 c
-         if( abs(sum) .gt. eps) then
-c         if( abs(sum/dd)*alpha .gt. eps) then
+         if( abs(sum) .gt. eps*dd) then
          goto 2000
          endif
 c
@@ -646,108 +398,6 @@ c
 
 
 
-        subroutine legedisc3(ier,ngrid,xs0,k,disc,ldisc,ncoefs,lkeep)
-        implicit double precision (a-h,o-z)
-        dimension disc(1),xs0(1)
-        external funuser
-c
-c       Construct a disc structure given a piecewise discretization
-c       scheme described entirely by the user.
-c 
-c       A structure describing the resulting scheme will be returned in
-c       the user-supplied array disc.
-c
-c                          Input Parameters:
-c
-c   ldisc - the length of the user-supplied disc array
-c
-c                         Output Parameters:
-c
-c   ier - an error return code;
-c       ier = 0    indicates successful execution
-c       ier = 4    means that the user-supplied disc array is of
-c                  insufficient length
-c       ier = 8    the internal stack used during discretization 
-c                  overflowed before the desired precision could be
-c                  achieved
-c       ier = 16   means that the maximum number of discretization
-c                  intervals was exceeded before the desired precision
-c                  could be achieved
-c
-c   disc - upon return, this user-supplied array will contain a
-c       structure describing the discretization
-c
-        ier = 0
-        ncoefs = 0
-c
-        maxints = 100 000
-c
-c       Allocate memory from the disc array for the quadrature and
-c       interval list.
-c
-        ixs = 1000
-        lxs = k
-c     
-        iwhts = ixs+lxs
-        lwhts = k
-c
-        iu = iwhts+lwhts
-        lu = k**2
-c
-        iv = iu+lu
-        lv = k**2
-c
-        iab = iv+lv
-        lab = maxints*2
-c
-        iw = iab+lab
-        lw = ldisc-iw
-c
-        if (lw .le. 0) then
-        ier = 4
-        return
-        endif
-c
-        lkeep = iw
-c
-c       Fetch the k-point Chebyshev quadrature data.
-c
-        call legendre(k,disc(ixs),disc(iwhts),disc(iu),disc(iv))
-c
-c       Construct the subintervals.
-c
-        nints = ngrid
-        do i=1,ngrid
-        disc(iab+(i-1)*2)   = xs0(1+2*(i-1))
-        disc(iab+(i-1)*2+1) = xs0(2*i)
-        end do
-
-c        call discfuns2(ier,eps,ngrid,xs0,nfuns,funuser,par1,par2,par3,
-c     -     par4,maxints,disc(iab),nints,k,disc(ixs),disc(iwhts),
-c     -     disc(iu))
-c        if (ier .ne. 0) return
-c
-        call prin2("in legedisc, ab = *",disc(iab),2*nints)
-c
-        ncoefs=nints*k
-c
-c       Build the structure header.
-c
-        disc(1) = k
-        disc(2) = nints
-        disc(3) = a
-        disc(4) = b
-c
-        disc(10) = k
-        disc(11) = ixs
-        disc(12) = iwhts
-        disc(13) = iu
-c
-        disc(20) = nints
-        disc(21) = iab
-        disc(22) = 1
-c
-        end
 
 c
 c

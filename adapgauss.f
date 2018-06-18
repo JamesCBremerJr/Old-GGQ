@@ -112,7 +112,6 @@ c
 c       Initialize the quadrature, if necessary.
 c
         call legequad(m,xs,whts)
-c
         val = 0
 c
 c       Initialize a stack at the end of the work array.

@@ -30,11 +30,11 @@ Legendre expansions.
 quadrature code and the file newton2d.f contains the two-dimensional version
 of the same.  Both codes rely on the utility routines in newtls.f.
 
-11.  The file logquads.f contains code for constructing quadrature rules
-for evaluating integrals of the form 
+11.  The file logquads.f contains code for constructing a set of
+quadrature rules for discretizing integral operators whose kernels
+have logarithmic singularities and which are given on planar curves.
 
-       1
-    int   ( log|x-y| p(y) + q(y) ) dy
-      -1
+12.  The file logquads2d.f contains code for constructing a set
+of quadrature rules for discretizing integral operators whose kernels
+have logarithmic singularities and which are given on planar domains.
 
-with p and q polynomials of specified degrees.
