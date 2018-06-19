@@ -328,7 +328,6 @@ c
  1200 continue
  1100 continue
 c
-c
 c       Check the trailing coefficients.
 c
         do 1300 j=1,nfuns
