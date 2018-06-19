@@ -329,9 +329,9 @@ c
         nq = nquadall(i)
         write(iw,1100) i,nq
         do j=1,nq
-        write(iw,1200) nq,i,xsall(j,i)
-        write(iw,1300) nq,i,ysall(j,i)
-        write(iw,1400) nq,i,whtsall(j,i)
+        write(iw,1200) j,i,xsall(j,i)
+        write(iw,1300) j,i,ysall(j,i)
+        write(iw,1400) j,i,whtsall(j,i)
         end do
         end do
 c
@@ -515,9 +515,9 @@ c
         nq = nquadall(i)
         write(iw,1100) i,nq
         do j=1,nq
-        write(iw,1200) nq,i,xsall(j,i)
-        write(iw,1300) nq,i,ysall(j,i)
-        write(iw,1400) nq,i,whtsall(j,i)
+        write(iw,1200) j,i,xsall(j,i)
+        write(iw,1300) j,i,ysall(j,i)
+        write(iw,1400) j,i,whtsall(j,i)
         end do
         end do
 c
