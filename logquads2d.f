@@ -907,7 +907,7 @@ c
         m    = 30
         ideg = 0
 c     
-        eps = eps00/100
+        eps = eps00/20
 c
         call lege(npoly+1,y2+x2,pols)
 c
