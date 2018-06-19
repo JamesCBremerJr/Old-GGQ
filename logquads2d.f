@@ -19,12 +19,12 @@ c
         integer, allocatable          :: nquadall(:)
         double precision              :: amatr(2,2)
 c
-        eps       = 1.0d-14
-        epsadap   = 1.0d-12
-        erraccept = 1.0d-8
+        eps       = 1.0d-22
+        epsadap   = 1.0d-24
+        erraccept = 1.0d-20
 c
         ndegree = 8            ! degree of the discretization polynomials
-        npoly   = 2            ! degree of polynomials to integrate
+        npoly   = 8           ! degree of polynomials to integrate
         nmax    = 999          ! maximum possible singular quadrature size
 c
         nlege   = npoly+1
@@ -264,6 +264,8 @@ c
 c
 c       Check the quadrature rules
 c
+!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(i,x1,x2,nq,errmax)
+!$OMP   DO
         do i=1,ndisc
         x1    = xsdisc(i)
         x2    = ysdisc(i)
@@ -274,12 +276,16 @@ c
         if (errmax .gt. erraccept) then
         call prin2("x1 = *",x1,1)
         call prin2("x2 = *",x2,1)
+        call prin2("errmax = *",errmax,1)
         call prina("diagquad error too high*")
-        stop
         endif
         end do
+!$OMP END DO
+!$OMP END PARALLEL
 c
 c
+!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(i,x1,x2,nq,errmax)
+!$OMP   DO
         do i=1,nquadbdy
         x1    = xsbdy(i)
         x2    = ysbdy(i)
@@ -290,13 +296,12 @@ c
         if (errmax .gt. erraccept) then
         call prin2("x1 = *",x1,1)
         call prin2("x2 = *",x2,1)
+        call prin2("errmax = *",errmax,1)
         call prina("diagquad bdy error too high*")
-        stop
         endif
-
         end do
-
-c        stop
+!$OMP END DO
+!$OMP END PARALLEL
 c
 c       Write the first set of singular rules to the disc
 c
@@ -380,9 +385,6 @@ c
 c
 c       Rotate the boundary quadratures to construct the others
 c
-c
-c       Rotate the boundary quadratures to construct the others
-c
         amatr(1,1) = 0
         amatr(1,2) = 1
         amatr(2,1) = -1
@@ -443,6 +445,8 @@ c
 c
 c      Check the second set of diagonal quadratures
 c
+!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(i,x1,x2,nq,errmax)
+!$OMP   DO
         do i=1,ndisc
         x1    = xsdisc(i)
         x2    = ysdisc(i)
@@ -453,13 +457,19 @@ c
         if (errmax .gt. erraccept) then
         call prin2("x1 = *",x1,1)
         call prin2("x2 = *",x2,1)
+        call prin2("errmax = *",errmax,1)
         call prina("diagquad2 error too high*")
-        stop
         endif
 
         end do
+!$OMP   END DO
+!$OMP END PARALLEL
+
 c
 c
+!$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(i,x1,x2,nq,errmax)
+!$OMP   DO
+
         do i=1,nquadbdy
         x1    = xsbdy(i)
         x2    = ysbdy(i)
@@ -470,11 +480,13 @@ c
         if (errmax .gt. erraccept) then
         call prin2("x1 = *",x1,1)
         call prin2("x2 = *",x2,1)
+        call prin2("errmax = *",errmax,1)
         call prina("diagquad2 bdy error too high*")
-        stop
         endif
 
         end do
+!$OMP   END DO
+!$OMP END PARALLEL
 
 c
 c       Write the second set of singular rules to the disc
