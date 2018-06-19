@@ -88,8 +88,8 @@ c
 c
  0100 format(A)
  0150 format("double precision :: ",A,"(",I3.3,",",I3.3,")")
+ 0160 format("double precision :: ",A,"(",I3.3,")")
  0175 format("integer          :: ",A,"(",I3.3,")")
-
  0300 format(A,I3.3)
  0400 format("xs(",I3.3,")   = ",D44.36)
  0500 format("ys(",I3.3,")   = ",D44.36)
@@ -97,7 +97,10 @@ c
 c
         write(iw,0100) "subroutine discquad(nquad,xs,ys,whts)"
         write(iw,0100) "implicit double precision (a-h,o-z)"
-        write(iw,0100) "double precision :: xs(:),ys(:),whts(:)"
+        write(iw,0100) "integer :: nquad"
+        write(iw,0160) "xs",ndisc
+        write(iw,0160) "ys",ndisc
+        write(iw,0160) "whts",ndisc
         write(iw,0300) "nquad     = ",ndisc
 
         do i=1,ndisc
@@ -118,7 +121,12 @@ c
 c
         write(iw,0100) "subroutine bdyquad(nquad,xs,ys,whts)"
         write(iw,0100) "implicit double precision (a-h,o-z)"
-        write(iw,0100) "double precision :: xs(:),ys(:),whts(:)"
+        
+        write(iw,0160) "xs",nquadbdy
+        write(iw,0160) "ys",nquadbdy
+        write(iw,0160) "whts",nquadbdy
+        write(iw,0100) "integer          :: nquad"
+
         write(iw,0300) "nquad     = ",nquadbdy
 
         do i=1,nquadbdy
@@ -524,10 +532,11 @@ c
         open(iw,FILE='quads.f90',STATUS='OLD',ACCESS='append')
 
         write(iw,0100) "subroutine discquad_info(ndegree," //
-     -    "nquad,naux,nmax)"
+     -    "nquad,nquadbdy,naux,nmax)"
         write(iw,0100) "implicit double precision (a-h,o-z)"
         write(iw,2100) "ndegree",ndegree
         write(iw,2100) "nquad",ndisc
+        write(iw,2100) "nquadbdy",nquadbdy
         write(iw,2100) "naux",npoly
         write(iw,2100) "nmax",nmax
         write(iw,0100) "end subroutine"
@@ -646,16 +655,16 @@ c       Compute the Chebyshev quadrature.
 c
         call chebquad(krank,funeval,disc,coefs,krank,par4,
      1    nquad0,xs0,whts0,nquad1,xs1,whts1,rints)
-c$$$c
-c$$$c
-c$$$c       Build the Gaussian quadrature.
-c$$$c
-c$$$        ifaccept = 0
-c$$$        ngoal    = 0
-c$$$c
-c$$$        call gaussquad(eps,krank,rints,funeval,disc,coefs,krank,
-c$$$     1    par4,nquad1,xs1,whts1,a,b,ngoal,ifaccept)
-c$$$c
+c
+c
+c       Build the Gaussian quadrature.
+c
+        ifaccept = 0
+        ngoal    = 0
+c
+        call gaussquad(eps,krank,rints,funeval,disc,coefs,krank,
+     1    par4,nquad1,xs1,whts1,a,b,ngoal,ifaccept)
+c
         deallocate(coefs,xs0,whts0)
 c
 c        ngoal = (krank+1)/2+1
