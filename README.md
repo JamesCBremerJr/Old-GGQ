@@ -27,8 +27,7 @@ Legendre expansions.
 9.  The file newtls.f contains code for solving least squares problems.
 
 10.  The file newton1d.f contains a one-dimensional ``generalized Gaussian''
-quadrature code and the file newton2d.f contains the two-dimensional version
-of the same.  Both codes rely on the utility routines in newtls.f.
+quadrature code.
 
 11.  The file logquads.f contains code for constructing a set of
 quadrature rules for discretizing integral operators whose kernels
