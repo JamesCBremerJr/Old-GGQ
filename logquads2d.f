@@ -1087,7 +1087,7 @@ c
 c
         nfuns3 = (npoly+2)*(npoly+3)/2*3
         call prinf("nfuns3 = *",nfuns3,1)
- 1000 continue
+ 0100 continue
         kdisc = kdisc+1
 c
         call legedisc(ier,ifadap,nints0,ab0,kdisc,eps,nfuns3,
@@ -1124,14 +1124,13 @@ c
         call gaussquad(eps,krank,rints,funeval,disc,coefs,krank,
      1    par4,nquad1,xs1,whts1,a,b,ngoal,ifaccept)
         deallocate(coefs,xs0,whts0)
-        if (ier .ne. 0) goto 1000
 c
         if (ier .ne. 0) goto 0100
 c        ngoal = (krank+1)/2+1
 c        if (nquad1 .gt. ngoal) goto 0100
         do i=1,nquad1
         if (whts1(i) .le. 0) goto 0100
-        if (xs1(i)   .lt. a .OR. xs1(i) .gt. b) goto 0100
+        if (xs1(i) .lt. a .OR. xs1(i) .gt. b) goto 0100
         end do
 
 c
