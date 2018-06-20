@@ -532,13 +532,17 @@ c
         open(iw,FILE='quads.f90',STATUS='OLD',ACCESS='append')
 
         write(iw,0100) "subroutine discquad_info(ndegree," //
-     -    "nquad,nquadbdy,naux,nmax)"
+     -    "nquad,nquadbdy,nleft,ntop,nright,nbottom,naux,nmax)"
         write(iw,0100) "implicit double precision (a-h,o-z)"
         write(iw,2100) "ndegree",ndegree
         write(iw,2100) "nquad",ndisc
         write(iw,2100) "nquadbdy",nquadbdy
         write(iw,2100) "naux",npoly
         write(iw,2100) "nmax",nmax
+        write(iw,2100) "ntop",ntop
+        write(iw,2100) "nleft",nleft
+        write(iw,2100) "nright",nright
+        write(iw,2100) "nbottom",nbottom
         write(iw,0100) "end subroutine"
         write(iw,*)    ""
         write(iw,*)    ""
@@ -667,8 +671,14 @@ c
 c
         deallocate(coefs,xs0,whts0)
 c
-c        ngoal = (krank+1)/2+1
-c        if (nquad1 .gt. ngoal) goto 0100
+        if (ier .ne. 0) goto 0100
+        ngoal = (krank+1)/2+1
+        if (nquad1 .gt. ngoal) goto 0100
+        do i=1,nquad1
+        if (whts1(i) .le. 0) goto 0100
+        if (xs1(i)   .lt. a .OR. xs1(i) .gt. b) goto 0100
+        end do
+
 c
         do i=1,nquad1
         idxs(i) = i
@@ -741,11 +751,16 @@ c
 c
         call gaussquad(eps,krank,rints,funeval,disc,coefs,krank,
      1    par4,nquad2,xs2,whts2,a,b,ngoal,ifaccept)
-c
         deallocate(coefs,xs0,whts0)
 c
-c$$$        ngoal = (krank+1)/2+1
-c$$$        if (nquad2 .gt. ngoal) goto 0200
+        if (ier .ne. 0) goto 0100
+        ngoal = (krank+1)/2+1
+        if (nquad2 .gt. ngoal) goto 0100
+        do i=1,nquad2
+        if (whts2(i) .le. 0) goto 0100
+        if (xs2(i)   .lt. a .OR. xs2(i) .gt. b) goto 0100
+        end do
+c
         do i=1,nquad2
         idxs(i) = i
         end do
@@ -1110,9 +1125,15 @@ c
      1    par4,nquad1,xs1,whts1,a,b,ngoal,ifaccept)
         deallocate(coefs,xs0,whts0)
         if (ier .ne. 0) goto 1000
+c
+        if (ier .ne. 0) goto 0100
+        ngoal = (krank+1)/2+1
+        if (nquad1 .gt. ngoal) goto 0100
+        do i=1,nquad1
+        if (whts1(i) .le. 0) goto 0100
+        if (xs1(i)   .lt. a .OR. xs1(i) .gt. b) goto 0100
+        end do
 
-        call prinf("krank = *",krank,1)
-        call prinf("nquad1= *",nquad1,1)
 c
 c       Build the tensor product quadrature
 c
