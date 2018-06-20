@@ -5,3 +5,4 @@ Backups
 fort*
 quads.f90
 quads1d.f90
+*.o
