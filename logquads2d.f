@@ -539,10 +539,10 @@ c
         write(iw,2100) "nquadbdy",nquadbdy
         write(iw,2100) "naux",npoly
         write(iw,2100) "nmax",nmax
-        write(iw,2100) "ntop",ntop
-        write(iw,2100) "nleft",nleft
-        write(iw,2100) "nright",nright
-        write(iw,2100) "nbottom",nbottom
+        write(iw,2100) "ntop",nlege
+        write(iw,2100) "nleft",nlege
+        write(iw,2100) "nright",nlege
+        write(iw,2100) "nbottom",nlege
         write(iw,0100) "end subroutine"
         write(iw,*)    ""
         write(iw,*)    ""
