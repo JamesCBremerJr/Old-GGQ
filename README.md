@@ -36,3 +36,7 @@ have logarithmic singularities and which are given on planar curves.
 12.  The file logquads2d.f contains code for constructing a set
 of quadrature rules for discretizing integral operators whose kernels
 have logarithmic singularities and which are given on planar domains.
+
+13.  The file gausssq.f contains code for constructing quadrature rules
+for integrating polynomials of a specified degree over the rectangle
+[-1,1] x [-1,1].
