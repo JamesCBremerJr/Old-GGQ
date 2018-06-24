@@ -1377,25 +1377,23 @@ c
         do j1 = 0,i
         j2 = i-j1
         idx       = idx+1
-        vals(idx) =  r**(i+1)*cos(theta)**j1 *sin(theta)**j2*cos(theta)
+        vals(idx) = r**(i+1)*cos(theta)**j1*sin(theta)**j2
         end do
         end do
 c
+        do i  = 0,npoly+1
+        do j1 = 0,i
+        j2 = i-j1
+        idx       = idx+1
+        vals(idx) =  r**(i+1)*cos(theta)**j1 *sin(theta)**j2*cos(theta)
+        end do
+        end do
 c
         do i  = 0,npoly+1
         do j1 = 0,i
         j2 = i-j1
         idx       = idx+1
         vals(idx) =  r**(i+1)*cos(theta)**j1*sin(theta)**j2*sin(theta)
-        end do
-        end do
-
-
-        do i  = 0,npoly+1
-        do j1 = 0,i
-        j2 = i-j1
-        idx       = idx+1
-        vals(idx) =  r**(i+1)*cos(theta)**j1*sin(theta)**j2
         end do
         end do
 c
