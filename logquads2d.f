@@ -120,35 +120,35 @@ c
         write(iw,*)    ""
         write(iw,*)    ""
 c
-c$$$        write(iw,0100) "subroutine bdyquad(nquad,xs,ys,whts)"
-c$$$        write(iw,0100) "implicit double precision (a-h,o-z)"
-c$$$        
-c$$$        write(iw,0160) "xs",nquadbdy
-c$$$        write(iw,0160) "ys",nquadbdy
-c$$$        write(iw,0160) "whts",nquadbdy
-c$$$        write(iw,0100) "integer          :: nquad"
-c$$$
-c$$$        write(iw,0300) "nquad     = ",nquadbdy
-c$$$
-c$$$        do i=1,nquadbdy
-c$$$        write(iw,0400) i,xsbdy(i)
-c$$$        end do
-c$$$c
-c$$$        do i=1,nquadbdy
-c$$$        write(iw,0500) i,ysbdy(i)
-c$$$        end do
-c$$$c
-c$$$        do i=1,nquadbdy
-c$$$        write(iw,0600) i,whtsbdy(i)
-c$$$        end do
-c$$$c
-c$$$        write(iw,0100) "end subroutine"
-c$$$        write(iw,*)    ""
-c$$$        write(iw,*)    ""
-c$$$
-c$$$        call flush(iw)
-c$$$
-c$$$        close(iw)
+        write(iw,0100) "subroutine bdyquad(nquad,xs,ys,whts)"
+        write(iw,0100) "implicit double precision (a-h,o-z)"
+        
+        write(iw,0160) "xs",nquadbdy
+        write(iw,0160) "ys",nquadbdy
+        write(iw,0160) "whts",nquadbdy
+        write(iw,0100) "integer          :: nquad"
+
+        write(iw,0300) "nquad     = ",nquadbdy
+
+        do i=1,nquadbdy
+        write(iw,0400) i,xsbdy(i)
+        end do
+c
+        do i=1,nquadbdy
+        write(iw,0500) i,ysbdy(i)
+        end do
+c
+        do i=1,nquadbdy
+        write(iw,0600) i,whtsbdy(i)
+        end do
+c
+        write(iw,0100) "end subroutine"
+        write(iw,*)    ""
+        write(iw,*)    ""
+
+        call flush(iw)
+
+        close(iw)
 c
         allocate(xsall(nmax,ndisc+nquadbdy),ysall(nmax,ndisc+nquadbdy))
         allocate(whtsall(nmax,ndisc+nquadbdy))
@@ -167,7 +167,7 @@ c
 !$OMP!    t1,t2,errmax)
         allocate(xs(10000),ys(10000),whts(10000))
 !$OMP   DO
-        do i=2,2
+        do i=1,ndisc
         x1    = xsdisc(i)
         x2    = ysdisc(i)
         call prini("idisc = ",i)
