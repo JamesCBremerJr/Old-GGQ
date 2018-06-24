@@ -120,35 +120,35 @@ c
         write(iw,*)    ""
         write(iw,*)    ""
 c
-        write(iw,0100) "subroutine bdyquad(nquad,xs,ys,whts)"
-        write(iw,0100) "implicit double precision (a-h,o-z)"
-        
-        write(iw,0160) "xs",nquadbdy
-        write(iw,0160) "ys",nquadbdy
-        write(iw,0160) "whts",nquadbdy
-        write(iw,0100) "integer          :: nquad"
-
-        write(iw,0300) "nquad     = ",nquadbdy
-
-        do i=1,nquadbdy
-        write(iw,0400) i,xsbdy(i)
-        end do
-c
-        do i=1,nquadbdy
-        write(iw,0500) i,ysbdy(i)
-        end do
-c
-        do i=1,nquadbdy
-        write(iw,0600) i,whtsbdy(i)
-        end do
-c
-        write(iw,0100) "end subroutine"
-        write(iw,*)    ""
-        write(iw,*)    ""
-
-        call flush(iw)
-
-        close(iw)
+c$$$        write(iw,0100) "subroutine bdyquad(nquad,xs,ys,whts)"
+c$$$        write(iw,0100) "implicit double precision (a-h,o-z)"
+c$$$        
+c$$$        write(iw,0160) "xs",nquadbdy
+c$$$        write(iw,0160) "ys",nquadbdy
+c$$$        write(iw,0160) "whts",nquadbdy
+c$$$        write(iw,0100) "integer          :: nquad"
+c$$$
+c$$$        write(iw,0300) "nquad     = ",nquadbdy
+c$$$
+c$$$        do i=1,nquadbdy
+c$$$        write(iw,0400) i,xsbdy(i)
+c$$$        end do
+c$$$c
+c$$$        do i=1,nquadbdy
+c$$$        write(iw,0500) i,ysbdy(i)
+c$$$        end do
+c$$$c
+c$$$        do i=1,nquadbdy
+c$$$        write(iw,0600) i,whtsbdy(i)
+c$$$        end do
+c$$$c
+c$$$        write(iw,0100) "end subroutine"
+c$$$        write(iw,*)    ""
+c$$$        write(iw,*)    ""
+c$$$
+c$$$        call flush(iw)
+c$$$
+c$$$        close(iw)
 c
         allocate(xsall(nmax,ndisc+nquadbdy),ysall(nmax,ndisc+nquadbdy))
         allocate(whtsall(nmax,ndisc+nquadbdy))
@@ -164,16 +164,18 @@ c       Build the first set of singular quadrature rules (for log
 c       singularities)
 c
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad,
-!$OMP!    t1,t2)
+!$OMP!    t1,t2,errmax)
         allocate(xs(10000),ys(10000),whts(10000))
 !$OMP   DO
-        do i=1,ndisc
+        do i=2,2
         x1    = xsdisc(i)
         x2    = ysdisc(i)
+        call prini("idisc = ",i)
         call elapsed(t1)
         call diagquad(ier,eps,npoly,x1,x2,nquad,xs,ys,whts)
         call elapsed(t2)
         call prin2("time = *",t2-t1,1)
+
         if (nquad .gt. nmax) then
         print *,"QUADRATURE SIZED EXCEEDED NMAX"
         stop
@@ -186,6 +188,7 @@ c
         end do
 !$OMP   END DO
 !$OMP   END PARALLEL
+c
 c
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(xs,ys,whts,i,x1,x2,ier,nquad,
 !$OMP!    t1,t2)
@@ -750,12 +753,12 @@ c
      1    par4,nquad2,xs2,whts2,a,b,ngoal,ifaccept)
         deallocate(coefs,xs0,whts0)
 c
-        if (ier .ne. 0) goto 0100
+        if (ier .ne. 0) goto 0200
 c        ngoal = (krank+1)/2+1
 c        if (nquad2 .gt. ngoal) goto 0100
         do i=1,nquad2
-        if (whts2(i) .le. 0) goto 0100
-        if (xs2(i)   .lt. a .OR. xs2(i) .gt. b) goto 0100
+        if (whts2(i) .le. 0) goto 0200
+        if (xs2(i)   .lt. a .OR. xs2(i) .gt. b) goto 0200
         end do
 c
         do i=1,nquad2
