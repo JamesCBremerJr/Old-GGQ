@@ -1,0 +1,46 @@
+#!/bin/sh
+
+export FC="gfortran -fopenmp -march=native -Ofast -w -fdefault-real-8"
+export CC="gcc"
+export DSTRIP="./dstrip"
+
+# build the dstrip utility
+$CC -o dstrip dstrip.c
+
+FILE="logquads2d_2"
+
+DFILES="adapgauss             \
+        adaptri               \
+        legedisc              \
+        orthom                \
+        newton1d              \
+        newtls                \
+        qrsolve               \
+        gspiv                 \
+        legendre              \
+        utils                 \
+        print 
+"
+
+LFILES=""
+
+for file in ${DFILES}
+do
+LFILES="${LFILES} ${file}.o"
+done
+
+# compile the code from which debugging headers are to be stripped.
+./FCOMP $DFILES
+
+
+# link 'em
+echo linking ...
+${FC} -o int2 ${FILE}.f ${LFILES}
+rm -f ${FILE}.o
+
+read -p "hit enter to run ..." var
+echo ""
+echo ""
+
+
+./int2
