@@ -800,6 +800,7 @@ c
 c       Thouroughly test one of the diagonal quadrature rules
 c
         allocate(errs( (npoly+1)*(npoly+2) ) )
+        errs=0
         idx = 0
 
         do nn1=0,npoly
@@ -843,47 +844,47 @@ c
         end do
         end do
 c
-        do nn1=0,npoly
-        do i1=0,nn1
-        j1 = nn1-i1
-c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) =  1
-        verts(2,2) = -1
-        verts(1,3) =  1
-        verts(2,3) =  1
-c
-        call adaptri(ier,epsadap,verts,funquad2,x1,x2,i1,j1,
-     1    val1,nquad01)
-c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) = -1
-        verts(2,2) =  1
-        verts(1,3) =  1
-        verts(2,3) =  1
-c
-        call adaptri(ier,epsadap,verts,funquad2,x1,x2,i1,j1,
-     1    val2,nquad02)
-c
-        val0  = val1+val2
-c
-        val  = 0
-        do i=1,nquad
-        x   = xs(i)
-        y   = ys(i)
-        wht = whts(i)
-        call funquad2(x,y,x1,x2,i1,j1,val00)
-        val = val + wht*val00
-        end do
-c
-        idx = idx + 1
-        errs(idx) = abs(val-val0)
-
-c
-        end do
-        end do
+c$$$        do nn1=0,npoly
+c$$$        do i1=0,nn1
+c$$$        j1 = nn1-i1
+c$$$c
+c$$$        verts(1,1) = -1
+c$$$        verts(2,1) = -1
+c$$$        verts(1,2) =  1
+c$$$        verts(2,2) = -1
+c$$$        verts(1,3) =  1
+c$$$        verts(2,3) =  1
+c$$$c
+c$$$        call adaptri(ier,epsadap,verts,funquad2,x1,x2,i1,j1,
+c$$$     1    val1,nquad01)
+c$$$c
+c$$$        verts(1,1) = -1
+c$$$        verts(2,1) = -1
+c$$$        verts(1,2) = -1
+c$$$        verts(2,2) =  1
+c$$$        verts(1,3) =  1
+c$$$        verts(2,3) =  1
+c$$$c
+c$$$        call adaptri(ier,epsadap,verts,funquad2,x1,x2,i1,j1,
+c$$$     1    val2,nquad02)
+c$$$c
+c$$$        val0  = val1+val2
+c$$$c
+c$$$        val  = 0
+c$$$        do i=1,nquad
+c$$$        x   = xs(i)
+c$$$        y   = ys(i)
+c$$$        wht = whts(i)
+c$$$        call funquad2(x,y,x1,x2,i1,j1,val00)
+c$$$        val = val + wht*val00
+c$$$        end do
+c$$$c
+c$$$        idx = idx + 1
+c$$$        errs(idx) = abs(val-val0)
+c$$$
+c$$$c
+c$$$        end do
+c$$$        end do
 c
         errmax = maxval(errs)
         call prin2("x1 = *",x1,1)
@@ -1181,6 +1182,7 @@ c
         nn = (npoly+1)*(npoly+2)/2*3
 
         allocate(errs(nn))
+        errs = 0
 c
         idx = 0
 
@@ -1282,56 +1284,56 @@ c
         end do
         end do
 c
-        do nn1=0,npoly
-        do i1=0,nn1
-        j1 = nn1-i1
-c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) =  1
-        verts(2,2) = -1
-        verts(1,3) =  1
-        verts(2,3) =  1
-c
-        call adaptri(ier,epsadap,verts,funquad5,x1,x2,i1,j1,
-     1    val1,nquad01)
-        if (ier .ne. 0) then
-           print *,"!"
-           stop
-        endif
-
-c
-        verts(1,1) = -1
-        verts(2,1) = -1
-        verts(1,2) = -1
-        verts(2,2) =  1
-        verts(1,3) =  1
-        verts(2,3) =  1
-c
-        call adaptri(ier,epsadap,verts,funquad5,x1,x2,i1,j1,
-     1    val2,nquad02)
-        if (ier .ne. 0) then
-           print *,"!"
-           stop
-        endif
-
-c
-        val0  = val1+val2
-c
-        val  = 0
-        do i=1,nquad
-        x   = xs(i)
-        y   = ys(i)
-        wht = whts(i)
-        call funquad5(x,y,x1,x2,i1,j1,val00)
-        val = val + wht*val00
-        end do
-c
-        idx = idx + 1
-        errs(idx) = abs(val-val0)
-c
-        end do
-        end do
+c$$$        do nn1=0,npoly
+c$$$        do i1=0,nn1
+c$$$        j1 = nn1-i1
+c$$$c
+c$$$        verts(1,1) = -1
+c$$$        verts(2,1) = -1
+c$$$        verts(1,2) =  1
+c$$$        verts(2,2) = -1
+c$$$        verts(1,3) =  1
+c$$$        verts(2,3) =  1
+c$$$c
+c$$$        call adaptri(ier,epsadap,verts,funquad5,x1,x2,i1,j1,
+c$$$     1    val1,nquad01)
+c$$$        if (ier .ne. 0) then
+c$$$           print *,"!"
+c$$$           stop
+c$$$        endif
+c$$$
+c$$$c
+c$$$        verts(1,1) = -1
+c$$$        verts(2,1) = -1
+c$$$        verts(1,2) = -1
+c$$$        verts(2,2) =  1
+c$$$        verts(1,3) =  1
+c$$$        verts(2,3) =  1
+c$$$c
+c$$$        call adaptri(ier,epsadap,verts,funquad5,x1,x2,i1,j1,
+c$$$     1    val2,nquad02)
+c$$$        if (ier .ne. 0) then
+c$$$           print *,"!"
+c$$$           stop
+c$$$        endif
+c$$$
+c$$$c
+c$$$        val0  = val1+val2
+c$$$c
+c$$$        val  = 0
+c$$$        do i=1,nquad
+c$$$        x   = xs(i)
+c$$$        y   = ys(i)
+c$$$        wht = whts(i)
+c$$$        call funquad5(x,y,x1,x2,i1,j1,val00)
+c$$$        val = val + wht*val00
+c$$$        end do
+c$$$c
+c$$$        idx = idx + 1
+c$$$        errs(idx) = abs(val-val0)
+c$$$c
+c$$$        end do
+c$$$        end do
 c
         errmax = maxval(errs)
 
