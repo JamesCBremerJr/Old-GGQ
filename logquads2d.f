@@ -19,15 +19,20 @@ c
         integer, allocatable          :: nquadall(:)
         double precision              :: amatr(2,2)
 c
-        eps       = 1.0d-24
-        epsadap   = 1.0d-24
+        eps       = 1.0d-20
+        epsadap   = 1.0d-20
         erraccept = 1.0d-20
+        ifcheck   = 0
 c
-        ndegree = 10          ! degree of the discretization polynomials
-        npoly   = 10          ! degree of polynomials to integrate
+        ndegree = 8           ! degree of the discretization polynomials
+        npoly   = 12          ! degree of polynomials to integrate
         nmax    = 999         ! maximum possible singular quadrature size
-c
-        nlege   = npoly+1
+!
+!        nlege   = ndegree+1
+!        nlege   = npoly
+!
+        nlege   = npoly
+
         allocate(xslege(nlege),whtslege(nlege))
         call legequad(nlege,xslege,whtslege)
 c     
@@ -276,6 +281,7 @@ c
 c
 c       Check the quadrature rules
 c
+        if (ifcheck .eq. 1) then
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(i,x1,x2,nq,errmax)
 !$OMP   DO
         do i=1,ndisc
@@ -295,6 +301,7 @@ c
 !$OMP END DO
 !$OMP END PARALLEL
 c
+
 c
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(i,x1,x2,nq,errmax)
 !$OMP   DO
@@ -314,6 +321,9 @@ c
         end do
 !$OMP END DO
 !$OMP END PARALLEL
+c
+        endif
+
 c
 c       Write the first set of singular rules to the disc
 c
@@ -457,6 +467,7 @@ c
 c
 c      Check the second set of diagonal quadratures
 c
+        if (ifcheck .eq. 1) then
 !$OMP   PARALLEL DEFAULT(SHARED) PRIVATE(i,x1,x2,nq,errmax)
 !$OMP   DO
         do i=1,ndisc
@@ -499,7 +510,8 @@ c
         end do
 !$OMP   END DO
 !$OMP END PARALLEL
-
+c
+        end
 c
 c       Write the second set of singular rules to the disc
 c
