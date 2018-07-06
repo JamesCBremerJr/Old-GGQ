@@ -511,7 +511,7 @@ c
 !$OMP   END DO
 !$OMP END PARALLEL
 c
-        end
+        endif
 c
 c       Write the second set of singular rules to the disc
 c
