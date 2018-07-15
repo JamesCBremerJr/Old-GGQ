@@ -45,3 +45,4 @@ and which are given on planar domains.
 
 13.  The file gausssq.f contains code constructing quadrature rules which
 integrate polynomials of a specified degree over the rectangle [-1,1] x [-1,1].
+
