@@ -24,7 +24,7 @@ c
         erraccept = 1.0d-20
         ifcheck   = 0
 c
-        ndegree = 8           ! degree of the discretization polynomials
+        ndegree = 12          ! degree of the discretization polynomials
         npoly   = 12          ! degree of polynomials to integrate
         nmax    = 999         ! maximum possible singular quadrature size
 !
