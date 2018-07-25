@@ -488,15 +488,15 @@ c
 c       Check that the point is inside the correct region; mark it
 c       for removal if not.
 c
-        if (x .lt. aa .OR. x .gt. bb) then
-        signifs(i)=-1
-        goto 1000
-        endif
-c
-        if (wht .lt. 0) then
-        signifs(i)=0
-        goto 1000
-        endif
+c$$$        if (x .lt. aa .OR. x .gt. bb) then
+c$$$        signifs(i)=-1
+c$$$        goto 1000
+c$$$        endif
+c$$$c
+c$$$        if (wht .lt. 0) then
+c$$$        signifs(i)=0
+c$$$        goto 1000
+c$$$        endif
 
 c
 c       Construct the neutered normal equations by deleting 2 columns

@@ -25,11 +25,8 @@ c
         ifcheck   = 0
 c
         ndegree = 8           ! degree of the discretization polynomials
-        npoly   = 8          ! degree of polynomials to integrate
+        npoly   = 12          ! degree of polynomials to integrate
         nmax    = 999         ! maximum possible singular quadrature size
-!
-!        nlege   = ndegree+1
-!        nlege   = npoly
 !
         nlege   = 12
 
@@ -1408,7 +1405,15 @@ c
         vals(idx) =  r**(i+1)*cos(theta)**j1*sin(theta)**j2*sin(theta)
         end do
         end do
-c
+c$$$c
+c$$$        do i  = 0,npoly+1
+c$$$        do j1 = 0,i
+c$$$        j2 = i-j1
+c$$$        idx       = idx+1
+c$$$        vals(idx) = log**(r)*r**(i+1)*cos(theta)**j1*sin(theta)**j2
+c$$$        end do
+c$$$        end do
+
         end subroutine
 
 

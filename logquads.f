@@ -5,8 +5,8 @@
         double precision, allocatable :: xsall(:,:),whtsall(:,:)
         double precision, allocatable :: xsnear(:),whtsnear(:)
 c
-        eps   = 1.0d-22
-        npoly = 8
+        eps   = 1.0d-24
+        npoly = 12
 c
         call legequad(npoly,xslege,whtslege)
         call prin2("xslege = *",xslege,npoly)
@@ -14,8 +14,18 @@ c
 c
 c       Construct the near quadrature rule
 c
-        allocate(xsnear(1000),whtsnear(1000))
-        call nearquad(eps,npoly,nquadnear,xsnear,whtsnear)
+c$$$        allocate(xsnear(1000),whtsnear(1000))
+c$$$        call nearquad(eps,npoly,nquadnear,xsnear,whtsnear)
+c$$$c
+c$$$        do i=1,nquadnear
+c$$$        x = xsnear(i)
+c$$$        wht = whtsnear(i)
+c$$$        if (x .lt. -1 .OR. x .gt. 1 .OR. wht .lt. 0) then
+c$$$           print *,"invalid  near quadrature"
+c$$$           stop
+c$$$        endif
+c$$$        end do
+
 c
 c       Construct the singular quadrature rules
 c
@@ -25,8 +35,15 @@ c
         do i=1,npoly
         x0 = xslege(i)
         call diagquad(eps,npoly,x0,nquad,xs,whts)
+
+
         nquadall(i) = nquad
         do l=1,nquad
+        if (xs(i) .lt. -1 .OR. xs(i) .gt. 1 .OR. whts(i) .lt. 0) then
+           print *,"invalid  diag quadrature ",i
+           stop
+        endif
+
         xsall(l,i)   = xs(l)
         whtsall(l,i) = whts(l)
         end do
@@ -49,23 +66,23 @@ c
         iw = 1001
         open(iw,FILE='quads1d.f90')
 c
-        write(iw,1000) "subroutine nearquad(nquad,xs,whts)"
-        write(iw,1000) "implicit double precision (a-h,o-z)"
-        write(iw,1000) "dimension xs(1),whts(1)"
-        write(iw,1300)  nquadnear
-        do i=1,nquadnear
-        write(iw,1100)  i,xsnear(i)
-        write(iw,1200)  i,whtsnear(i)
-        end do
-c
-        write(iw,1000) "end subroutine"
-        write(iw,*)    ""
-        write(iw,*)    ""
+c$$$        write(iw,1000) "subroutine nearquad(nquad,xs,whts)"
+c$$$        write(iw,1000) "implicit double precision (a-h,o-z)"
+c$$$        write(iw,1000) "dimension xs(1),whts(1)"
+c$$$        write(iw,1300)  nquadnear
+c$$$        do i=1,nquadnear
+c$$$        write(iw,1100)  i,xsnear(i)
+c$$$        write(iw,1200)  i,whtsnear(i)
+c$$$        end do
+c$$$c
+c$$$        write(iw,1000) "end subroutine"
+c$$$        write(iw,*)    ""
+c$$$        write(iw,*)    ""
 
-        write(iw,1000) "subroutine singquad(nquadsall,xsall,whtsall)"
+        write(iw,1000) "subroutine singquads1d(nquadsall,xsall,whtsall)"
         write(iw,1000) "implicit double precision (a-h,o-z)"
-        write(iw,1000) "dimension xsall(200,1),whtsall(200,1)"
-        write(iw,1000) "dimension nquadsall(1)"
+        write(iw,1000) "dimension xsall(999,12),whtsall(999,12)"
+        write(iw,1000) "dimension nquadsall(12)"
 
         do i=1,npoly
         write (iw,1400) i,nquadall(i)
@@ -154,7 +171,7 @@ c
      1    par4,nquad,xs,whts,a,b,ngoal,ifaccept)
 c
         do i=1,nquad
-        xs(i) = xs(i) +x0
+        xs(i) = xs(i) + x0
         end do
 c
         do i=1,nquad
