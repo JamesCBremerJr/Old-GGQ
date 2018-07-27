@@ -18,7 +18,7 @@ c
         epscheb = 1.0d-30
         eps     = 1.0d-30
 c
-        norder = 24
+        norder = 8
         par1   = norder
 c
         npols = (norder+1)*(norder+2)/2
@@ -31,12 +31,12 @@ c
         call prinf("npols = *",npols,1)
         call prinf("nfuns = *",nfuns,1)
 c
-        ngoal = (npols+2)/3+1
+        ngoal = (npols+2)/3
         call prinf("ngoal = *",ngoal,1)
 c
 c       Build an oversampled quadrature for the functions.
 c
-c        call tensorsquare2(norder,nquad0,xs0,ys0,whts0)
+!        call tensorsquare2(norder,nquad0,xs0,ys0,whts0)
         nnn = norder
  0011 continue
         nnn = nnn + 1
@@ -164,11 +164,6 @@ c
         x = xs3(j)
         y = ys3(j)
         wht=whts3(j)
-c
-c$$$        if (x .lt. -1 .OR. x .gt. 1.0d0)    goto 011
-c$$$        if (y .lt. 0 .OR. y .gt. 1.0d0)     goto 011 
-c$$$        if (wht .lt. 0   )                  goto 0011
-
         nquad=nquad+1
         xs(nquad)=x
         ys(nquad)=y
@@ -198,21 +193,33 @@ c
 c       Use them evil Cauchy iterations to try to eliminate a few more
 c       points.
 c
-        nfuns4 = (norder+1)*(norder+2)/2
-        par1 = norder
-c
-        iregion     =1
-        ifcauchy    =1
-        ifonlysignifs=0
-c
-        call gaussquad(eps,nfuns4,funeval4,par1,par2,nquad,xs,
-     1    ys,whts,iregion,ifcauchy,ifonlysignifs,ngoal)
+c$$$        nfuns4 = (norder+1)*(norder+2)/2
+c$$$        par1 = norder
+c$$$c
+c$$$        iregion     =1
+c$$$        ifcauchy    =1
+c$$$        ifonlysignifs=0
+c$$$c
+c$$$        call gaussquad(eps,nfuns4,funeval4,par1,par2,nquad,xs,
+c$$$     1    ys,whts,iregion,ifcauchy,ifonlysignifs,ngoal)
 c
 c       We're done.
 c
         call prinf("nquad final =*",nquad,1)
-        ngoal = (npols+2)/3
-        call prinf("ngoal = *",ngoal,1)
+        call prin2("xs final= *",xs,nquad)
+        call prin2("whs final= *",whts,nquad)
+        call prina("*")
+        call prina("*")
+        call prina("*")
+c
+        do j=1,nquad
+        x=xs(j)
+        y=ys(j)
+        wht=whts(j)
+        if (x .lt. -1 .OR. x. gt. 1) goto 0011
+        if (y .lt. -1 .OR. y. gt. 1) goto 0011
+        if(wht .lt. 0) goto 011
+        end do
 c
 c       Test the formula.
 c
@@ -228,6 +235,7 @@ c
         x=xs0(j)
         y=ys0(j)
         wht=whts0(j)
+
         call funtest(x,y,val,i1,i2)
         sum0=sum0+wht*val
  3200 continue
@@ -297,7 +305,7 @@ c
         write (iw,1450) ys(nquad)
 
 c
-        write (iw,1500) 'whts'
+        write (iw,1300) 'whts'
         write (iw,1400) (whts(i),i=1,nquad-1)
         write (iw,1450) whts(nquad)
 
