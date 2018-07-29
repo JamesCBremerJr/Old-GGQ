@@ -18,7 +18,7 @@ c
         epscheb = 1.0d-30
         eps     = 1.0d-30
 c
-        norder = 8
+        norder = 16
         par1   = norder
 c
         npols = (norder+1)*(norder+2)/2

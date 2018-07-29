@@ -5,8 +5,8 @@
         double precision, allocatable :: xsall(:,:),whtsall(:,:)
         double precision, allocatable :: xsnear(:),whtsnear(:)
 c
-        eps   = 1.0d-24
-        npoly = 12
+        eps   = 1.0d-30
+        npoly = 20
 c
         call legequad(npoly,xslege,whtslege)
         call prin2("xslege = *",xslege,npoly)

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export FC="gfortran -w -O2 -fdefault-integer-8 -fdefault-real-8"
+export FC="gfortran -w -march=native -Ofast -fdefault-integer-8 -fdefault-real-8"
 #export FC="lf95 --fast "
 #export FC="ifort -O3 "
 export CC="gcc"
